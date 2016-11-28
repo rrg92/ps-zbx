@@ -1,0 +1,81 @@
+TOPIC
+    about_XLogging
+
+SHORT DESCRIPTION
+    This help explain general considerations for XLogging module.
+
+LONG DESCRIPTION
+	TERMS
+		user - That script or programmer that user this object.
+		log packet - A object that contains informations about logged message (see more later)
+		The Log (or just "Log") - This module.
+	
+	GENERAL INFORMATION
+	
+		THe XLogging module was created based on log facilities provided by a module called CustomMSSQL, a another powershell module for extended sql server management.
+		Because XLogging presents many useful features for any type of powershell script, a separate independently module was created!
+	
+		The Log allows you logging by proiding a Object with properties and methods for interacting with it facilities.
+		In simple case, you calls the functions GetLogObject and stores it on variable. Its returns a object that represents a instance of The Log.
+		After this, you can call method "log" and provide a message. After that, log engine will do the work.
+		
+		The main taks of log engine is write log message to destination. It use LogTo property to determine the destinations.
+		Another important task of log engine is write the only logs which the level is specified by user. 
+		For example, if user specify "PROGRESS" message only, just messages categorized as "PROGRESS" or bellow will be write to logs destinations. 
+		Log method allows user specify a level when logging (calling Log method).
+		This can be a bit confusing, but this architecture allows the user write logs just by calling Log method. Log engine takes care of write out or not.
+		The user cannot worry about when a logging need to be made using ifs. The code stay clean.
+		
+		The property LogLevel specify the allowed level to be logged. Any log message with level bigger thant specified here, ist descarted by log engine.
+		The parameter, LogLevel, of Log method, specify the logged level of message.
+		The Log Engine provides a feature called Dynamic Level Discovery. With this, a custom script can determine automatically the level of message and user worry just about calling "Log 'message'".
+
+		You can control many options and change the default behaviors of log engine.
+		Internally, the log engine use a concept of LogPacket. A LogPacket is simple a object with all information about logging message (and the message logged, of course).
+		
+
+	THE LOG LEVELS
+		The log levels supported by engine is defined on function GetLogLevels.
+		Its is a hashtable where each name is the log level name and value is a number.
+		The number is used for determine if a specific level is lower or  higher than another level.
+		Higher levels always include lower levels. For example, if LogLevel property is set to 3, then levels 1,2 and 3 are logged.
+		
+	THE LOG PACKET
+		The log packet is a object that contains informations about logged message.
+		It contains following properties (Check NewLogPacket function to updated properties and description)
+			- message: The logged message.
+			- ts: The [datetime] that message as logged. You can use this for bypass delay between log call and log processing.
+			- level: The message level name. You can use the GetLogLevels function to get correct number.
+			- custom: Can contains custom data passed by user
+			
+		Log packets are sent in specific locations to custom user scripts.
+		
+	DYNAMIC LEVEL DISCOVERY (DLD)
+	
+		Dynamic Discovery is a facility provided by Log object for allow Log engine determine message level based on message logged.
+		The discovery engine is a simple scriptblock that analyze the message and determine the level.
+		The Log provides a uses a default script that do following:
+	
+			- If message starts with a tab, this is considered DETAILED.
+			- If message stats with a any string and a string "Command:" its is considered verbose (its assume the you printing a command that will be executed)
+			- If nothing of this, PROGRESS is used.
+			
+		User can provide a custom script via property DLDScript property of the log.
+		This property is a scriptbock that receives a LogPacket with current logging information.
+		
+		For disable DLD, use can set property UseDLD to false. (The default is true). This is useful if logging is affecting perfomance of script.
+		Disabling DLD causes all messages to be a PROGRESS as default (if another is not specified with level parameter of Log method)
+		DLD isnt not use in this cases:
+		
+			- Is disabled.
+			- If a log level was passed used "LogLevel" parameter of Log method. 
+
+EXAMPLES
+	Nothing still.
+
+KEYWORDS
+    LOGGING DEVELOPMENT POWERSHELL
+
+SEE ALSO
+    Nothing still.
+

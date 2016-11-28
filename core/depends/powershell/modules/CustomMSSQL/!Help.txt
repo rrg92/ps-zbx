@@ -1,0 +1,5 @@
+CustomMSSQL modules is developed by Rodrigo Ribeiro Gomes (www.thesqltimes.com)
+Its is free for distribute and modify. The sale is not allowed.
+
+
+Check full documentation with get-help about_Custom_MSSQL after import module.

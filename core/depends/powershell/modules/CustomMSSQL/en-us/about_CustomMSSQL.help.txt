@@ -1,0 +1,66 @@
+TOPIC
+    about_CustomMSSQL
+
+SHORT DESCRIPTION
+    This help explain general considerations for this module and organizations for developer new cmdlets in this modules or fix existent.
+
+LONG DESCRIPTION
+	CustomMSSQL modules is developed by Rodrigo Ribeiro Gomes (www.thesqltimes.com)
+	Its is free for distribute and modify. The sale is not allowed.
+
+	CustomMSSQL provides new cmdlets for manage and query SQL Server using powershell.
+	Its is based on dayly based DBA advanced tasks.
+	
+	You must use Get-Command -Module CustomMSSQL command for view all cmdlets exported.
+	Use Get-Help CmdLet name for more details.
+
+	In some scenarios, you must want use a cmdlet directly instead of importing the module.
+	Fot this, CustomMSSQL provide standalone implementation of some cmdlets of module. It will are on "<root>\standalone" folder.
+	Because some cmdlets, like Copy-SQLDataase depends on some modules facilities, some implementations cannot be avalaible at given time.
+	And some implementantions in standalone, can be without some facilities provided by CustomMSSQL structure, like logging.
+	Standalone is useful, for example, when you need use CustomMSSQL via remote share and time spend importing module is too long.
+	You can access directly standalone version of cmdlet to improve perfomance.
+	Check standlone documentantion for more details!
+
+	
+	MOTIVATION
+		CustomMSSQL was developed for bypass default problems in cmdlets provided by Microsoft sqlps module.
+		Its use pure powershell (and .NET integration) for making the thinkgs more easy.
+	 
+	
+	MODULE PROGRAMMER REFERENCE
+
+		FILE STRUCTURE
+
+			The modules is organized in following files:
+			
+				cmdlets.ps1
+					Are files with cmdlets code. Its must have functions definitions in format Noun-Verb that will be exported.
+				aux.ps1
+					Are helper functions. It must provide functions that will not be exported. 
+					The functions cannot have a Noun-Verb because it will be exported.
+					If your intention isnt not export the function, then dont use *-* in name.
+					
+			By default, module will search this files on root directory.
+			You can change this behavior at export time by using parameters CmdLetsDir and AuxDir
+			
+		
+		DEFAULT FUNCTIONS
+		
+			Some default functions are provide for standard use.
+			This functions are defined as aux.ps1 files.
+			
+				GetLogObject (Log.aux.ps1)			
+					Provides standard way to logging.
+					Check details for more information.
+					This functions return a object that you can use for logging.
+
+EXAMPLES
+	Nothing still.
+
+KEYWORDS
+    SQLSERVER MSSQL CUSTOMMSSQL QUERYING BACKUP RESTORE
+
+SEE ALSO
+    Nothing still.
+

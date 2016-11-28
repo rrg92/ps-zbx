@@ -1,0 +1,1 @@
+SELECT COUNT(*) as PermissionAccessTest FROM sys.dm_exec_requests

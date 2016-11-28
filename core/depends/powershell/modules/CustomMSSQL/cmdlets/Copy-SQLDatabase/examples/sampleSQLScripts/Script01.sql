@@ -1,0 +1,1 @@
+SELECT SUSER_NAME() as SuserName,USER_NAME() as UserName,DB_NAME() AS DatabaseName

@@ -1,0 +1,26 @@
+O diretorio raíz do projeto contém diversos diretorios. Conhecer os diretorios é útil para conseguir configurar adequadamente e realizar troubleshooting.
+
+São eles:
+
+	* core
+		Contém arquivos essenciais para o funcionamento da solução.
+		Estes arquivos devem ser alterados somente por orientação dos autores.
+
+	* core\depends
+		Contém diversas dependências.
+		
+	* core\agents\libs
+		Contém diversos arquivos com scripts auxiliares para o funcionamento da solução.
+
+
+	* log
+		Diretório padrão de log.
+
+	* install
+		Diretorio com arquivos e scripts de instalação.
+
+	* doc
+		Arquivos com a documentação da solução!
+
+	* config
+		Contém tudo que pode ser configurado e alterado pelo usuário.

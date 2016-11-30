@@ -25,7 +25,7 @@ try {
 		$CurrentFileBase	= [System.Io.Path]::GetFileNameWithoutExtension($CurrentFile)
 		$CurrentDir 		= [System.Io.Path]::GetDirectoryName($CurrentFile)
 		$BaseDir 			= [System.Io.Path]::GetDirectoryName([System.Io.Path]::GetDirectoryName($CurrentDir))
-		$LibsDir			= $BaseDir + "\core\agents\libs"
+		$LibsDir			= $BaseDir + "\core\glibs"
 
 		if(![System.IO.Directory]::Exists($LibsDir)){
 			throw "LIB_DIR_NOT_FOUND: $LibsDir"
@@ -37,7 +37,7 @@ try {
 		$OriginalDebugMode = $DebugMode;
 		try {
 			$LoadLib = $LibsDir + '\LoadLibs.ps1';
-			. $LoadLib;
+			. $LoadLib $BaseDir;
 		} catch {
 			throw "LIBS_LOAD_FAILED: $_"
 		}

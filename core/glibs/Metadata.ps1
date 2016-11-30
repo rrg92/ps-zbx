@@ -3,45 +3,6 @@
 #Local centralizado de variáveis deste script.
 
 
-#Verifica se as variáveis obrigatórias foram definidas!
-Function CheckGlobalVars($VarName = $null) {
-	$EXPECTED_VARS = 'PSZBX_BASE_DIR','PSZBX_LIBS_DIR','PSZBX_AGENT_BASENAME'
-	
-	$Errors = @()
-	$EXPECTED_VARS | ? { $_ -eq $VarName -or $VarName -eq $null } | %{
-		$VarValue = Get-Variable -Scope Global -Name $_ -ValueOnly -ErrorAction SilentlyContinue;
-		if(!$VarValue){
-			$Errors += $_
-		}
-	}
-	
-	if($Errors){
-		return $false
-	} else {
-		return $true
-	}
-}
-
-
-#Obtém o valor de uma variável do PSZBX!
-Function GetPsZbxVar($Name){
-	$Name = 'PSZBX_'+$Name;
-	
-	if(CheckGlobalVars $Name){
-		return Get-Variable -Scope Global -Name $Name  -ValueOnly
-	} else {
-		throw "GLOBAL_VAR_NOT_DEFINED: $Name"
-	}
-}
-
-#Seta ou cria o valor de uma variável do PSZBX.
-Function SetPsZbxVar($Name,$value){
-	$Name = 'PSZBX_'+$Name;
-
-	Set-Variable -Name $Name -Scope Global -Value $Value;
-}
-
-
 #Retorna o valor do diretorio base.
 Function GetBaseDir(){
 	return GetPsZbxVar 'BASE_DIR'
@@ -56,6 +17,12 @@ Function GetConfigDir(){
 Function GetLogDir(){
 	$Config = GetPsZbxVar 'AGENT_CONFIG';
 	return $Config.LOGBASE_DIR;
+}
+
+#Retorna o caminho para o diretório de log default, que é entregue junto com a solução!
+Function GetDefaultLogDir(){
+	$BaseDir = GetBaseDir;
+	return $BaseDir + '\log'
 }
 
 #Retorna o caminho para o diretorio de módulos
@@ -73,35 +40,6 @@ Function GetAgentBaseName(){
 	}
 }
 
-#Retorna o caminho para o arquivo de configuração do agente, definido pelo usuário.
-Function GetUserConfigFile(){
-	$ConfigDir 	= GetConfigDir
-	$AgentName	= GetAgentBaseName
-	return $ConfigDir +"\agents\"+ $AgentName + ".config.ps1";
-}
-
-#Obtém as configurações padroes
-Function GetDefaultConfig(){
-	$DefaultConfigFile = (GetBaseDir) + "\core\agents\.config.ps1";
-	
-	if(![System.IO.File]::Exists($DefaultConfigFile)){
-		throw "DEFAULT_CONFIG_FILE_NOT_FOUND: $DefaultConfigFile"
-	}
-	
-	return (& $DefaultConfigFile);
-}
-
-#Obtém as configurações read_only
-Function GetReadOnlyConfig(){
-	$ReadOnlyConfigFile = (GetBaseDir) + "\core\agents\readonly.config.ps1";
-	
-	if(![System.IO.File]::Exists($ReadOnlyConfigFile)){
-		throw "DEFAULT_CONFIG_FILE_NOT_FOUND: $ReadOnlyConfigFile"
-	}
-	
-	return (& $ReadOnlyConfigFile);
-}
-
 #Ajusta as configurações baseadas no valor padrão e no valor determinado pelo usuário!
 Function DefineConfiguratons($USERCONFIG) {
 	$NewConfig = GetDefaultConfig;
@@ -114,7 +52,6 @@ Function DefineConfiguratons($USERCONFIG) {
 
 	return $NewConfig;
 }
-
 
 
 #Esta função verifica se um dado item da configuração deve ser expandido (é um path)
@@ -196,22 +133,31 @@ Function ExpandDirs($Table, $HashPath = $null){
 	}
 }
 	
-	
-	
-#Obtém um arquivo de log do agente!
-Function GetAgentLogFile($LogFileName){
-	return (GetLogDir) + "\psagents\" + $LogFileName
-}
 
-
-#Importa os módulos necessários para o agente
-Function ImportAgentPsModules(){
+#Importa os módulos do powershell que estão no diretorio de módulos
+Function ImportPowershellModules($ModuleList = $null){
 	$ModuleDir = GetModulesDir
 
 	#Obtém a lista de diretórios 
-	gci $ModuleDir | ? {$_.PsIsContainer} | %{
-		import-module $_.FullName
+	gci $ModuleDir | ? {$_.PsIsContainer} | ?{ $ModuleList -Contains $_.Name -or !$ModuleList } | %{
+		import-module $_.FullName -DisableNameChecking -force;
 	}
 }
 
 
+#Cria um nome de arquivo para log!
+#Log virá com um timestamp!
+Function GetLogFileName($Prefix, $Dir = $null){
+	$ts = (Get-Date).toString("yyyyMMdd_HHmmSS")
+	$LogFileName = "$ts.log";
+	
+	if($Prefix){
+		$LogFileName = $Prefix +'.'+ $LogFileName; 
+	}
+	
+	if($dir){
+		$LogFileName = $Dir +'\'+ $LogFileName 
+	}
+
+	return $LogFileName;
+}

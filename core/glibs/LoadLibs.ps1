@@ -1,9 +1,13 @@
 #Carrega todos os arquivos do diretorio atual 
 param(
-	[switch]$DebugMode
+	#Load libs espera o diretorio base para que seja configurado a variável!!!
+	$BASE_DIR
+	,[switch]$DebugMode
 )
 
-$CurrentFileName	= [System.Io.Path]::GetFileName($MyInvocation.MyCommand.Definition)
+$ErrorActionPreference	= "Stop";
+$CurrentFileName		= [System.Io.Path]::GetFileName($MyInvocation.MyCommand.Definition)
+
 
 push-location
 try {
@@ -18,8 +22,6 @@ try {
 } finally{
 	pop-location
 }
-
-
 
 
 

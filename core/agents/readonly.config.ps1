@@ -17,4 +17,8 @@ return @{
 			"\core\debug\keys\DebugKeys.keys.ps1"
 		)
 	}
+	
+	#Versão!
+	_VERSION = "1.0"
+	
 }

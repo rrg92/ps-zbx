@@ -51,7 +51,8 @@ $SQLServices | %{
 													IsClustered = $false
 													InstanceName = $InstanceName
 													ServiceName = $_.Name
-													Network = (New-Object PSObject -Prop @{IP=$null;DNS=$SourceComputer})
+													Network = (New-Object PSObject -Prop @{IP=$null;DNS=$SourceComputer;Domain=$null;FullName=$null})
+													
 												}));
 }
 
@@ -80,19 +81,60 @@ if(Get-Module -ListAvailable FailoverClusters ) {
 			
 			$NetworkResource = $_.OwnerGroup | Get-ClusterResource | ? {$_.ResourceType -eq 'Network Name'}
 			$DNSName		= ($NetworkResource | Get-ClusterParameter | ? {$_.Name -eq 'DNSName'} | Get-Random).Value;
+			$DNsSuffix		= ($NetworkResource | Get-ClusterParameter | ? {$_.Name -eq 'DnsSuffix'} | Get-Random).Value;
 			
 			$IPResource = $_.OwnerGroup | Get-ClusterResource | ? {$_.ResourceType -eq 'Ip Address'}
 			$IPAddress	= ($IPResource | Get-ClusterParameter | ? {$_.Name -eq 'Address'} | Get-Random ).Value;
 			
 			$InstanceInfo.Network.IP 	= $IPAddress
 			$InstanceInfo.Network.DNS 	= $DNSName
+			$InstanceInfo.Network.Domain 	= $DNsSuffix	
 		}
 		
 	}
 	
 
-} else {
-	write-host "Módulo de cluster não encontrado!"
+}
+
+#Obtém as informações de domínio para configurar as instancias que não estão em cluster...
+
+$ComputerInfo = Get-WMIObject Win32_ComputerSystem
+$ComputerDomain = $null;
+if($ComputerInfo.partofdomain){
+	$ComputerDomain = $ComputerInfo.domain;
+}
+
+#Obtém todos os IPs e rede na máquina!
+#Cada posicao representa um objeto contendo as propriedades IP e Subnet
+$AdaptersConfigurations = Get-WMIObject Win32_NetworkAdapterConfiguration | ?{$_.IpAddress};
+$AllIps=@()
+
+#Para cada configuration...
+$AdaptersConfigurations | %{
+	$CurrentAdapter = $_;
+	
+	$i = -1;
+	$CurrentAdapter.IpAddress | %{ #Para cada ip no adapter...
+		$CurrentIPs = $_;
+		
+		$i++;
+		if($_ -like "*:*"){
+			return; #Ingora o IPV6...
+		}
+		
+		$CurrentIP 	= $_;
+		$IpSubNet	= $CurrentAdapter.IpSubNet[$i];
+		
+		$Ip = New-Object PSObject -Prop @{IP=$CurrentIP;Subnet=$IpSubNet};
+		$AllIps += $IP;
+	}
+}
+
+#Para as instâncias que não estão em cluster...
+$SQLInstances.GetEnumerator() | ? { !$_.Value.IsClustered } | %{
+	$SQLInstance = $_.Value;
+	$SQLInstance.Network.Domain = $ComputerDomain;
+	$SQLInstance.Network.IP = $AllIps;
 }
 
 $AllObjects = @();
@@ -108,6 +150,12 @@ $SQLInstances.GetEnumerator() | %{
 	
 	$LeftName += '\' + $CurrentO.InstanceName;
 	$CurrentO.ServerName = $LeftName;
+	
+	$CurrentO.Network.FullName = $CurrentO.Network.DNS
+	
+	if($CurrentO.Network.Domain){
+		$CurrentO.Network.FullName += '.' + $CurrentO.Network.Domain
+	}
 	
 	
 	$AllObjects += $_.Value;

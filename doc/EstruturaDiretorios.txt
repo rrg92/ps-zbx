@@ -24,3 +24,8 @@ São eles:
 
 	* config
 		Contém tudo que pode ser configurado e alterado pelo usuário.
+		
+	* upgrade
+		
+		Contém arquivos e diretórios usados em processos de upgrade.
+		Não deve ser alterado pelo usuário.

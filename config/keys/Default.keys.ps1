@@ -1,5 +1,5 @@
-# Este √© um arquivo com m√©tricas comuns a serem monitoradas em todas as inst√¢ncias.
-#	Esta m√©tricas apenas relatam o estado do ambiente. N√£o precisam ser enviadas em um tempo curto demais.
+# Este È um arquivo com mÈtricas comuns a serem monitoradas em todas as inst‚ncias.
+#	Esta mÈtricas apenas relatam o estado do ambiente. N„o precisam ser enviadas em um tempo curto demais.
 #	O tempo ideal seria a cada 1 minuto.
 
 @{
@@ -23,6 +23,6 @@
 	#Perf counters
 	"mssql.perfcounter[?CounterName,?CounterInstanceName]" = "<DIRSCRIPTS>\sql\PerfCounter.sql"
 	
-	#Aqui √© realizado um teste b√°sico de conex√£o. Se a conex√£o for feita com sucesso, retorna 1, sen√£o, retorna 0.
+	#Aqui È realizado um teste b·sico de conex„o. Se a conex„o for feita com sucesso, retorna 1, sen„o, retorna 0.
 	"mssql.instance[ping]" = "SELECT 1"
 }

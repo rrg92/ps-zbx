@@ -1,6 +1,6 @@
 #Utilidades gerais...
 
-#Permite o usuÃ¡rio inserir credenciais para os servidores...
+#Permite o usuário inserir credenciais para os servidores...
 #Retorna uma hashtable contendo os pares de servidores/credenciais...
 
 
@@ -53,12 +53,12 @@ while($serverName = GetUserOption){
 	}
 
 	if($Creds.Contains($ServerName)){
-		write-host 'O Server que vocÃª forneceu jÃ¡ existe. Ignorando!';
+		write-host 'O Server que você forneceu já existe. Ignorando!';
 		read-host 'ENTER para continuar' | out-null
 		continue;
 	}
 	
-	write-host "Agora, forneÃ§a as credenciais!"
+	write-host "Agora, forneça as credenciais!"
 	$C = Get-Credential;
 	
 	$Creds.add($ServerName, $C);

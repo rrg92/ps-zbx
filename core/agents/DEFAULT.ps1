@@ -1,4 +1,4 @@
-Ôªøparam($Instance
+param($Instance
 	#Keys Group definem o grupo de keys a ser usado.
 	#	default: Usa as keys definidas como "default"
 	#	discovery: Usa as keys definidas como "discovery"
@@ -20,7 +20,7 @@ $ErrorActionPreference = "stop";
 
 try {
 	#Determinando o diretorio base atual para carregar as dependencias
-	#O diret√≥rio base est√° a dois n√≠veis acima.
+	#O diretÛrio base est· a dois nÌveis acima.
 		$CurrentFile		= $MyInvocation.MyCommand.Definition
 		$CurrentFileBase	= [System.Io.Path]::GetFileNameWithoutExtension($CurrentFile)
 		$CurrentDir 		= [System.Io.Path]::GetDirectoryName($CurrentFile)
@@ -31,7 +31,7 @@ try {
 			throw "LIB_DIR_NOT_FOUND: $LibsDir"
 		}
 
-	#Carregando as fun√ß√µes das bibliotecas!
+	#Carregando as funÁıes das bibliotecas!
 
 	
 		$OriginalDebugMode = $DebugMode;
@@ -43,7 +43,7 @@ try {
 		}
 		$DebugMode = $OriginalDebugMode;
 		
-		#Configura as vari√°veis globais do PSZBX
+		#Configura as vari·veis globais do PSZBX
 		SetPsZbxVar 'BASE_DIR' $BaseDir
 		SetPsZbxVar 'LIB_DIR' $LibsDir
 		SetPsZbxVar 'AGENT_BASENAME' $CurrentFileBase
@@ -61,14 +61,14 @@ try {
 		
 		$CONFIG = DefineConfiguratons $USER_CONFIG;
 		
-		#Configura a vari√°vel CONFIG!
+		#Configura a vari·vel CONFIG!
 		SetPsZbxVar 'AGENT_CONFIG' $CONFIG
 		
 		
-	#importando m√≥dulos dependentes
+	#importando mÛdulos dependentes
 	ImportAgentPsModules
 	
-	#Configurando o mecanismo de log b√°sico do agente!
+	#Configurando o mecanismo de log b·sico do agente!
 	$InstanceName = PrepareServerInstanceString $Instance 
 	$LogFileBaseName=$InstanceName.replace("\","$")+".log";
 	$LogFileName = GetAgentLogFile $LogFileBaseName;
@@ -82,15 +82,15 @@ try {
 	#Ajustando as constantes que possuem caminhos!
 	ExpandDirs $CONFIG 
 
-#Aqui come√ßa o processamento do script. ALterar somente mediante orienta√ß√£o de algu√©m que conhe√ßa
+#Aqui comeÁa o processamento do script. ALterar somente mediante orientaÁ„o de alguÈm que conheÁa
 
-	#Trata o nome da inst√¢ncia apropriadamente.
+	#Trata o nome da inst‚ncia apropriadamente.
 	$InstanceName = PrepareServerInstanceString $Instance 
 	$Log | Invoke-Log "Instance Name is: $InstanceName" 
 	
 	
-	#Escolhe o key group! Se o key group escolhido foi inv√°lido, ent√£o avisa.
-	#O keys groups √© o conjunto de keys a ser usados. Ele √© identificado por um nome pr√©-determinado neste script.
+	#Escolhe o key group! Se o key group escolhido foi inv·lido, ent„o avisa.
+	#O keys groups È o conjunto de keys a ser usados. Ele È identificado por um nome prÈ-determinado neste script.
 	#Isto permite reaproveitar este script para monitorar diferentes items.
 		$Keys = @()
 	
@@ -111,7 +111,7 @@ try {
 	#Carrega os keys, caso seja especificado ....
 		if($KeysGroupFile){
 			foreach($File in $KeysGroupFile){
-				#Se n√£o termina com .keys.ps1
+				#Se n„o termina com .keys.ps1
 				$FileAtual = $File;
 				
 				if($FileAtual -NotLike "*.keys.ps1"){
@@ -122,7 +122,7 @@ try {
 			}
 		}
 		
-	#Verifica se o debug mode est√° ativo e adicionar as keys de debug.
+	#Verifica se o debug mode est· ativo e adicionar as keys de debug.
 		
 		if($DebugMode){
 			if($JustDebugKeys){
@@ -133,18 +133,18 @@ try {
 		}
 
 
-	#Se n√£o h√° keys definitions, ent√£o for√ßa o erro.
+	#Se n„o h· keys definitions, ent„o forÁa o erro.
 		if(!$Keys){
 			throw "NO_KEY_DEFINITION"
 		}
 
-	#If for pra determinar o hostname de modo din√¢mico...
+	#If for pra determinar o hostname de modo din‚mico...
 	if(!$HostName -and $DynamicHostName){
 		$HostName = . $CONFIG.DYNAMIC_HOSTNAME_SCRIPT @{Instance=$Instance};
 	}
 
 
-	#Determiuna o nome do arquivo de log baseado no nome da inst√¢ncia informado.
+	#Determiuna o nome do arquivo de log baseado no nome da inst‚ncia informado.
 		$LogFileNameBaseExtension = $LogFileNameExt;
 		
 		if(!$LogFileNameBaseExtension){
@@ -162,7 +162,7 @@ try {
 		$LogFileName = GetAgentLogFile $LogFileBaseName;
 		
 
-	#Prepara os par√¢metros a serem enviados usando Send-SQL2Zabbix!
+	#Prepara os par‚metros a serem enviados usando Send-SQL2Zabbix!
 		$Params = @{
 			Instance		= $InstanceName
 			HostName		= $hostname
@@ -183,13 +183,13 @@ try {
 			$Params.LogLevel = "VERBOSE"
 		}
 
-	#Chamando o cmdlet Send-SQL2Zabbix. Este cmdlet est√° definido no m√≥dulo CustomMSSQL.
-	#Ele cont√©m toda a l√≥gica necess√°ria para executar os scripts definidos na keys e enviar para o zabbix.
-	#As atualiza√ß√µes podem ser baixadas do site scriptstore.thesqltimes.com/docs/custommssql
+	#Chamando o cmdlet Send-SQL2Zabbix. Este cmdlet est· definido no mÛdulo CustomMSSQL.
+	#Ele contÈm toda a lÛgica necess·ria para executar os scripts definidos na keys e enviar para o zabbix.
+	#As atualizaÁıes podem ser baixadas do site scriptstore.thesqltimes.com/docs/custommssql
 		Send-SQL2Zabbix @Params
 		$ExitCode = 0; #Marca como exit sucesso!
 } catch {
-	#Aqui √© apenas um tratamento de erro.
+	#Aqui È apenas um tratamento de erro.
 		$ex = $_;
 	
 	#loga o erro no arquivo de log, se falhar, manda pro stdout!
@@ -206,7 +206,7 @@ try {
 			write-host "ERROR LOGGING ERROR: $_";
 		}
 	
-	#Se for para finalizar sem retorna o exit code, ent√£o for√ßa um throw;
+	#Se for para finalizar sem retorna o exit code, ent„o forÁa um throw;
 		if(!$ReturnExitCode){
 			throw;
 		}

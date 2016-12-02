@@ -1,6 +1,6 @@
-#Arquivo contendo fun√ß√µes diversas para auxiliar os scripts.
+#Arquivo contendo funÁıes diversas para auxiliar os scripts.
 
-#Local centralizado de vari√°veis deste script.
+#Local centralizado de vari·veis deste script.
 
 
 #Retorna o valor do diretorio base.
@@ -8,30 +8,30 @@ Function GetBaseDir(){
 	return GetPsZbxVar 'BASE_DIR'
 }
 
-#Retorna o caminho para o diret√≥rio de configura√ß√£o, baseado no diretorio base.
+#Retorna o caminho para o diretÛrio de configuraÁ„o, baseado no diretorio base.
 Function GetConfigDir(){
 	return (GetBaseDir) + "\config";
 }
 
-#Retorna o caminho para o diret√≥rio de log, baseado no diretorio base.
+#Retorna o caminho para o diretÛrio de log, baseado no diretorio base.
 Function GetLogDir(){
 	$Config = GetPsZbxVar 'AGENT_CONFIG';
 	return $Config.LOGBASE_DIR;
 }
 
-#Retorna o caminho para o diret√≥rio de log default, que √© entregue junto com a solu√ß√£o!
+#Retorna o caminho para o diretÛrio de log default, que È entregue junto com a soluÁ„o!
 Function GetDefaultLogDir(){
 	$BaseDir = GetBaseDir;
 	return $BaseDir + '\log'
 }
 
-#Retorna o caminho para o diretorio de m√≥dulos
+#Retorna o caminho para o diretorio de mÛdulos
 Function GetModulesDir {
 	return (GetBaseDir) + '\core\depends\powershell\modules'
 }
 
 
-#Retorna o nome base do agente. Que √© o nome do arquivo, sem a extens√£o .ps1
+#Retorna o nome base do agente. Que È o nome do arquivo, sem a extens„o .ps1
 Function GetAgentBaseName(){
 	if(CheckGlobalVars PSZBX_AGENT_BASENAME){
 		return Get-Variable -Scope Global -Name 'PSZBX_AGENT_BASENAME' -ValueOnly
@@ -40,25 +40,25 @@ Function GetAgentBaseName(){
 	}
 }
 
-#Ajusta as configura√ß√µes baseadas no valor padr√£o e no valor determinado pelo usu√°rio!
+#Ajusta as configuraÁıes baseadas no valor padr„o e no valor determinado pelo usu·rio!
 Function DefineConfiguratons($USERCONFIG) {
 	$NewConfig = GetDefaultConfig;
 	
-	#Iterando sobre a lista de keys para alterar aquelas que foram defindias pelo usu√°rio!
+	#Iterando sobre a lista de keys para alterar aquelas que foram defindias pelo usu·rio!
 	$NewConfig = MergeHashTables -Dest $NewConfig -Src $USERCONFIG
 	
-	#Adiciona as configura√ß√µes readonly
+	#Adiciona as configuraÁıes readonly
 	$NewConfig += (GetReadOnlyConfig)
 
 	return $NewConfig;
 }
 
 
-#Esta fun√ß√£o verifica se um dado item da configura√ß√£o deve ser expandido (√© um path)
-#O $ItemName indica o nome do item. √â um path completo. Se estiver dentro de uma hashtable deve incluir o nome da mesma.
-#Se for  a hashtable pai, ent√£o um '\' basta.
+#Esta funÁ„o verifica se um dado item da configuraÁ„o deve ser expandido (È um path)
+#O $ItemName indica o nome do item. … um path completo. Se estiver dentro de uma hashtable deve incluir o nome da mesma.
+#Se for  a hashtable pai, ent„o um '\' basta.
 Function IsPathItem($ItemName, $ItemValue) {
-	#Lista de padr√µes de nome que podem ser paths.
+	#Lista de padrıes de nome que podem ser paths.
 	$Wilds = "*_DIR","*_PATH","KEYS_GROUP\*","_KEYS_GROUP\*"
 	
 	if($ItemValue -is [hashtable]){
@@ -72,21 +72,21 @@ Function IsPathItem($ItemName, $ItemValue) {
 	return $false;
 }
 
-#Fun√ß√£o para realizar a expans√£o de diretorio.
-#A expans√£o de diret√≥rio √© um processo para transformar os caminhos relativos em abosolutos.
-#Ex.: Os items com configura√ß√£o \x\y v√£o virar C:\x\y (por exemplo).
-#A fun√ß√£o j√° trata toda a expans√£o. Se houver items cujo o valor √© outra hashtable, a fun√ß√£o ir√° tratar adequadamente.
-#A fun√ß√£o tamb√©m trata adequadamente as expans√µes de item cujo o valor √© um array de string... expandindo cada valor se necess√°rio...
+#FunÁ„o para realizar a expans„o de diretorio.
+#A expans„o de diretÛrio È um processo para transformar os caminhos relativos em abosolutos.
+#Ex.: Os items com configuraÁ„o \x\y v„o virar C:\x\y (por exemplo).
+#A funÁ„o j· trata toda a expans„o. Se houver items cujo o valor È outra hashtable, a funÁ„o ir· tratar adequadamente.
+#A funÁ„o tambÈm trata adequadamente as expansıes de item cujo o valor È um array de string... expandindo cada valor se necess·rio...
 
 Function ExpandDirs($Table, $HashPath = $null){
 	
-	#O hash path √© um apenas um meio de indicar a fun√ß√£o quem s√£o os pais do item.
+	#O hash path È um apenas um meio de indicar a funÁ„o quem s„o os pais do item.
 	#POr exemplo, considere:
 	#	@{ A = 1; B = @{ B1 = 'b1'; B2 = 'b2' } }
 	#
-	# Neste caso, ao expandir B1, que √© filho de B, a fun√ß√£o ir√° passar um hash path '\B', indicando que B √© a hashpai.
-	#Desse modo, fica muito simples especificar na fun√ß√£o IsPathItem, os filtros dos items que devem ser expandidos.
-	#Por exemplo, se todos os items de b2 s√£o items que podem ser expandidos, ent√£o o filtro ficaria B1*
+	# Neste caso, ao expandir B1, que È filho de B, a funÁ„o ir· passar um hash path '\B', indicando que B È a hashpai.
+	#Desse modo, fica muito simples especificar na funÁ„o IsPathItem, os filtros dos items que devem ser expandidos.
+	#Por exemplo, se todos os items de b2 s„o items que podem ser expandidos, ent„o o filtro ficaria B1*
 	
 	#para cada key da hash...
 	$BaseDir = GetBaseDir;
@@ -100,21 +100,21 @@ Function ExpandDirs($Table, $HashPath = $null){
 		}
 		
 		
-		#se o valor atual √© um hashtable, monta o path e chama a recursividade...
+		#se o valor atual È um hashtable, monta o path e chama a recursividade...
 		if($CurrentValue -is [hashtable]){
 			
 			ExpandDirs -Table $CurrentValue -HashPath "$HashPath\$CurrentItem"
-			return; #Vai pra pr√≥xima key...
+			return; #Vai pra prÛxima key...
 		}
 		
 		
 		
-		$ExpandedValue	= @($CurrentValue); #Array tempor√°rio. Para os casos onde o valor √© um array de string!
+		$ExpandedValue	= @($CurrentValue); #Array tempor·rio. Para os casos onde o valor È um array de string!
 		$i 				= $ExpandedValue.count
 		
 		
 		if($CurrentValue){
-			#Para cada item do array tempor√°rio, expande-o e guarda novamente na mesma posi√ß√£o.
+			#Para cada item do array tempor·rio, expande-o e guarda novamente na mesma posiÁ„o.
 			while($i--){
 				
 				if($ExpandedValue[$i] -match '^\\[^\\].*'){
@@ -124,7 +124,7 @@ Function ExpandDirs($Table, $HashPath = $null){
 		}
 		
 		
-		#Se o valor original for um array, ent√£o atribui o array tempor√°rio, sen√£o, atribui o primeiro elemento somente.
+		#Se o valor original for um array, ent„o atribui o array tempor·rio, sen„o, atribui o primeiro elemento somente.
 		if($CurrentValue -is [object[]]){
 			$Table[$CurrentItem] = $ExpandedValue;
 		} else {
@@ -134,11 +134,11 @@ Function ExpandDirs($Table, $HashPath = $null){
 }
 	
 
-#Importa os m√≥dulos do powershell que est√£o no diretorio de m√≥dulos
+#Importa os mÛdulos do powershell que est„o no diretorio de mÛdulos
 Function ImportPowershellModules($ModuleList = $null){
 	$ModuleDir = GetModulesDir
 
-	#Obt√©m a lista de diret√≥rios 
+	#ObtÈm a lista de diretÛrios 
 	gci $ModuleDir | ? {$_.PsIsContainer} | ?{ $ModuleList -Contains $_.Name -or !$ModuleList } | %{
 		import-module $_.FullName -DisableNameChecking -force;
 	}
@@ -146,7 +146,7 @@ Function ImportPowershellModules($ModuleList = $null){
 
 
 #Cria um nome de arquivo para log!
-#Log vir√° com um timestamp!
+#Log vir· com um timestamp!
 Function GetLogFileName($Prefix, $Dir = $null){
 	$ts = (Get-Date).toString("yyyyMMdd_HHmmSS")
 	$LogFileName = "$ts.log";
@@ -160,4 +160,24 @@ Function GetLogFileName($Prefix, $Dir = $null){
 	}
 
 	return $LogFileName;
+}
+
+
+#Obtem o caminho para um diretorio de backup!
+#Cria o diretÛrio se n„o existe!
+Function GetUpgradeBackupDir {
+	param($BaseDir = $null)
+	
+	if(!$BaseDir){
+		$BaseDir = GetBaseDir
+	}
+	
+	$ts = (Get-Date).toString("yyyyMMdd_HHmmss");
+	$BackupDir = $BaseDir + "\upgrade\$ts"
+	
+	if(![System.IO.Directory]::Exists){
+		$CreatedDir = mkdir $BackupDir -force;
+	}
+
+	return $BackupDir;
 }

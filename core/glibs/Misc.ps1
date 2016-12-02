@@ -6,11 +6,11 @@ Function MergeHashTables($Dest,$Src, [switch]$Recurse = $false) {
 		$DestKey 	= $_;
 		$DestValue	= $Dest[$DestKey]
 		
-		#Se a key existir na origem, ent√£o usa atualiza o valor da origem no destino.
+		#Se a key existir na origem, ent„o usa atualiza o valor da origem no destino.
 		if($Src.Contains($DestKey)){
 			$SrcValue = $Src[$DestKey];
 			
-			#Se a key de origem e de destino s√£o uma hashtable.
+			#Se a key de origem e de destino s„o uma hashtable.
 			if($Recurse){
 				if($DestValue -is [hashtable] -and $SrcValue -is [hashtable]){
 					#Chama a propria funcaio para  mesclar
@@ -48,7 +48,7 @@ function bitshift {
     return [uint64][math]::Floor($x * [math]::Pow(2,$shift))
 }
 
-#Converte um ip ou mascara num√©rico para representa√ß√£o textual!
+#Converte um ip ou mascara numÈrico para representaÁ„o textual!
 #Solucao adapatada de: http://stackoverflow.com/questions/32028166/convert-cidr-notation-into-ip-range
 #Thanks Sami Kuhmonen
 Function NumIp2String {
@@ -61,7 +61,7 @@ Function NumIp2String {
 	
 }
 
-#Extrai informa√ß√µes de rede do IP. O Ip pode ser informado no formato x.x.x.x/dd ou x.x.x.x/mmm.mmm.mmm.mmm
+#Extrai informaÁıes de rede do IP. O Ip pode ser informado no formato x.x.x.x/dd ou x.x.x.x/mmm.mmm.mmm.mmm
 #Solucao adapatada de: http://stackoverflow.com/questions/32028166/convert-cidr-notation-into-ip-range
 #Thanks Sami Kuhmonen
 Function GetIpNetInfo {
@@ -88,25 +88,25 @@ Function GetIpNetInfo {
 	$IpParts = $ip.Split( @('/') );
 	$parts	 = $IpParts[0].split(".")
 	
-	#Gera a representa√ß√£o do IP em formato num√©rico...
+	#Gera a representaÁ„o do IP em formato numÈrico...
 	[uint32]$ipnum = 	[Convert]::ToUint32(  (bitshift $parts[0] -Left 24) ) 	-bor `
 						[Convert]::ToUInt32(  (bitshift $parts[1] -Left 16) ) 	-bor `
 						[Convert]::ToUInt32(  (bitshift $parts[2] -Left 8)) 	-bor `
 						[Convert]::ToUInt32(  ( $parts[3] ) )
 
 	
-	[byte]$maskBits = $null #ir√° guardar o n√∫mero de bits da m√°scara...
+	[byte]$maskBits = $null #ir· guardar o n˙mero de bits da m·scara...
 	
-	#Verifica se a m√°scara foi informada na nota√ß√£o cidr...
+	#Verifica se a m·scara foi informada na notaÁ„o cidr...
 	$maskString = $IpParts[1];
 	if($maskString.trim() -match '^\d?\d$'){
-		#Converte para n√∫mero...
+		#Converte para n˙mero...
 		$maskBits = [byte]$maskString;
 	} else {
-		#A m√°scara foi informada no formato xxx.xxx.xxx.xxx
+		#A m·scara foi informada no formato xxx.xxx.xxx.xxx
 		$maskParts = $maskString.split(".");
 		
-		#Os octetos podem somente conter estes valores. (Exx.: 1000000 -> 128 | 11000000 --> 192). O valor 10100000 n√£o pode (os 1 tem de ser sequenciais.)
+		#Os octetos podem somente conter estes valores. (Exx.: 1000000 -> 128 | 11000000 --> 192). O valor 10100000 n„o pode (os 1 tem de ser sequenciais.)
 		$ValidRanges = 0,128,192,224,240,248,252,254,255
 		$bitCount = 0;
 		$previousOctect = 255;
@@ -115,7 +115,7 @@ Function GetIpNetInfo {
 			$octNum++;
 			$Byte = [byte]$_; #Converte o valor para um byte!
 			
-			#Se o octeto anterior n√£o foi 255 (11111111), ent√£o pode somente 0!
+			#Se o octeto anterior n„o foi 255 (11111111), ent„o pode somente 0!
 			if($_ -ne 0 -and $previousOctect -ne 255){
 				throw "INVALID_MASK_OCTECT: Pos:$octNum Value:$_ ($maskString)"
 			}
@@ -136,11 +136,11 @@ Function GetIpNetInfo {
 		throw "INVALID_MASK_BIT_COUNT: $maskBits"
 	}
 	
-	#Obt√©m a representacao num√©rica da mascara
+	#ObtÈm a representacao numÈrica da mascara
 	#Faz um and com o max value do int32, pois so improta os ultimos 32 bits!
 	[uint32]$maskNum = (bitshift ([UInt32]::MaxValue) -Left (32 - $maskBits)) -band [UInt32]::MaxValue;
 	
-	#Ont√©m o ip da rede
+	#OntÈm o ip da rede
 	$netIpNum = $ipnum -band $maskNum;
 	
 	return NEw-Object PsObject -Prop @{
@@ -155,4 +155,34 @@ Function GetIpNetInfo {
 										)
 					}
 	
+}
+
+
+
+#Transforma um caminho absoluto em relativo removendo uma parte do caminho especificado!
+#Adapatado da resposta de http://stackoverflow.com/questions/703281/getting-path-relative-to-the-current-working-directory/703290#703290
+Function GetRelativePath
+{
+	param($FullPath, $BaseDir)
+
+	$FullURI 	= New-Object System.URI($FullPath);
+	
+	#O diretorio base tem que terminar com uma barra!
+	$BaseDir = AddDirSlash $BaseDir
+	
+	$BaseURI = New-Object System.URI($BaseDir);
+	
+	return $BaseURI.MakeRelative($FullURI).replace('/',[System.IO.Path]::DirectorySeparatorChar);
+}
+
+
+#Adiciona uma barra no final do diretÛrio, se n„o houver!
+Function  AddDirSlash {
+	param($Dir)
+	
+	if(!$Dir.EndsWith([System.IO.Path]::DirectorySeparatorChar)){
+		$dir += [System.IO.Path]::DirectorySeparatorChar
+	}
+	
+	return $Dir;
 }

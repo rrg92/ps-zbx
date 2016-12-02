@@ -1,45 +1,45 @@
 <#
-	Este arquivo define certos par√¢metros de configura√ß√£o do agente DEFAULT.
-	As configura√ß√µes s√£o definidas como itens de uma hashtable.
-	O agente ir√° carregar este arquivo, que dever√° retornar uma hashtable com as configura√ß√µes.
+	Este arquivo define certos par‚metros de configuraÁ„o do agente DEFAULT.
+	As configuraÁıes s„o definidas como itens de uma hashtable.
+	O agente ir· carregar este arquivo, que dever· retornar uma hashtable com as configuraÁıes.
 	
-	A documenta√ß√£o de cada configura√ß√£o est√° descrita abaixo. Utilize este arquivo como um modelo para implementar agentes customizados.
+	A documentaÁ„o de cada configuraÁ„o est· descrita abaixo. Utilize este arquivo como um modelo para implementar agentes customizados.
 
-	Items de configura√ß√£o que representam caminhos de arquivos ou diretorio podem iniciar com "/".
+	Items de configuraÁ„o que representam caminhos de arquivos ou diretorio podem iniciar com "/".
 	Quando um item desse tipo iniciar com "/", significa um caminho relativo para o diretorio raiz onde os scripts foram instalados.
-	Por exemplo, se a solu√ß√£o foi instalada em "C:\Zabbix\SQLZBX" e o item especifica "\config\keys", ent√£o o caminho completo √© "C:\Zabbix\SQLZBX\config\keys".
+	Por exemplo, se a soluÁ„o foi instalada em "C:\Zabbix\SQLZBX" e o item especifica "\config\keys", ent„o o caminho completo È "C:\Zabbix\SQLZBX\config\keys".
  #>
  
 
-#Vamos definir alguns valores usados em v√°rios locais:
+#Vamos definir alguns valores usados em v·rios locais:
 	$KEYSDEF_DIR = "\config\keys"
  
 
 return @{
 	
-	#Diret√≥rio onde se encontram as keys (Arquivos keysdef.ps1)
+	#DiretÛrio onde se encontram as keys (Arquivos keysdef.ps1)
 	KEYSDEF_DIR = $KEYSDEF_DIR
 	
-	#Diret√≥rios com os scripts que ser√£o executados para gerar os dados.
+	#DiretÛrios com os scripts que ser„o executados para gerar os dados.
 	SCRIPTS_DIR	= "\config\scripts"
 	
-	#Caminho para o m√≥dulo CustomMSSQL (M√≥dulo importante para o funcionamento da solu√ß√£o)
+	#Caminho para o mÛdulo CustomMSSQL (MÛdulo importante para o funcionamento da soluÁ„o)
 	CUSTOMMSSQL_PATH = "\core\depends\powershell\modules\CustomMSSQL"
 	
-	#Diretorio de log. Este sera o local padr√£o onde os logs dos scripts ser√£o feitos.
+	#Diretorio de log. Este sera o local padr„o onde os logs dos scripts ser„o feitos.
 	LOGBASE_DIR	= "\log"
 	
 	
-	#Endere√ßo e porta do zabbix
+	#EndereÁo e porta do zabbix
 	ZABBIX_SERVERPORT	 = "localhost:10051"
 	
-	#Diret√≥rio com o zabbix_sender.exe .Utilize a versao mais recente e suportada pela solu√ß√£o.
-	#Por padr√£o, a solu√ß√£o inclui uma vers√£o, mas n√£o impede do usu√°rio especificar o caminho com uma solu√ß√£o mais recente.
+	#DiretÛrio com o zabbix_sender.exe .Utilize a versao mais recente e suportada pela soluÁ„o.
+	#Por padr„o, a soluÁ„o inclui uma vers„o, mas n„o impede do usu·rio especificar o caminho com uma soluÁ„o mais recente.
 	ZABBIXSENDER_PATH = "\core\depends\tools\zabbix_sender.exe"
 	
 	#Script usado para determinar o hostname a ser enviado para o zabbix.
-	#Este script √© util quando o hostname diferene do nome da instancia enviado.
-	#O par√¢metro $VALUES cont√©m valores √∫teis que podem ser usados para auxiliar.
+	#Este script È util quando o hostname diferene do nome da instancia enviado.
+	#O par‚metro $VALUES contÈm valores ˙teis que podem ser usados para auxiliar.
 	#Para saber que valores estao disponiveis, consulte o script do agente!
 	DYNAMIC_HOSTNAME_SCRIPT = {
 			param($VALUES)
@@ -49,8 +49,8 @@ return @{
 		}
 		
 	#Este item define grupos de keys.
-	#Os grupos de keys s√£o √∫teis e permitem especificar v√°rias keys baseados em um grupo.
-	#O script do agente aceita um par√¢metro chamado "KeysGroup". Ao especificar este par√¢metro, o script ir√° usar as keys definidas
+	#Os grupos de keys s„o ˙teis e permitem especificar v·rias keys baseados em um grupo.
+	#O script do agente aceita um par‚metro chamado "KeysGroup". Ao especificar este par‚metro, o script ir· usar as keys definidas
 	#neste item.
 	KEYS_GROUP = @{}
 }

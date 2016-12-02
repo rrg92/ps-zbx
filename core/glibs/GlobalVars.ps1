@@ -1,6 +1,6 @@
 #Global variables handling!
 
-#Verifica se as variÃ¡veis obrigatÃ³rias foram definidas!
+#Verifica se as variáveis obrigatórias foram definidas!
 Function CheckGlobalVars($VarName = $null) {
 	$EXPECTED_VARS = 'PSZBX_BASE_DIR','PSZBX_LIBS_DIR','PSZBX_AGENT_BASENAME'
 	
@@ -20,7 +20,7 @@ Function CheckGlobalVars($VarName = $null) {
 }
 
 
-#ObtÃ©m o valor de uma variÃ¡vel do PSZBX!
+#Obtém o valor de uma variável do PSZBX!
 Function GetPsZbxVar($Name){
 	$Name = 'PSZBX_'+$Name;
 	
@@ -32,14 +32,14 @@ Function GetPsZbxVar($Name){
 }
 
 
-#Seta ou cria o valor de uma variÃ¡vel do PSZBX.
+#Seta ou cria o valor de uma variável do PSZBX.
 Function SetPsZbxVar($Name,$value){
 	$Name = 'PSZBX_'+$Name;
 
 	Set-Variable -Name $Name -Scope Global -Value $Value;
 }
 
-#Se foi definida uma variÃ¡vel com o nome BASE_DIR, adiciona ela!
+#Se foi definida uma variável com o nome BASE_DIR, adiciona ela!
 if($BASE_DIR){
 	SetPsZbxVar 'BASE_DIR' $BASE_DIR
 } else {

@@ -22,10 +22,10 @@ $CurrentFile = $MyInvocation.MyCommand.Definition
 $CurrentDir  = [System.Io.Path]::GetDirectoryName($CurrentFile)
 $BaseDir	 = [System.Io.Path]::GetDirectoryName($CurrentDir);
 
-#Libs do componente de install. Note que estas libs s√£o diferentes.
+#Libs do componente de install. Note que estas libs s„o diferentes.
 	$LibsDir = $BaseDir + "\core\glibs"
 
-#Se n√£o consegue encontrar o diretorio de libs...
+#Se n„o consegue encontrar o diretorio de libs...
 	if(![System.IO.Directory]::Exists($LibsDir)){
 		throw "LIB_DIR_NOT_FOUND: $LibsDir"
 	}
@@ -40,7 +40,7 @@ $BaseDir	 = [System.Io.Path]::GetDirectoryName($CurrentDir);
 	}
 	$DebugMode = $OriginalDebugMode;
 
-#importa os m√≥dulos dependnetes!!!
+#importa os mÛdulos dependnetes!!!
 	ImportPowershellModules 'power-zabbix'
 	
 #Configura o diretorio de log!
@@ -188,7 +188,7 @@ if($DiscoveredSQL){
 				
 				
 			} else {
-				write-host '	Sem configura√ß√£o de ip para interface';
+				write-host '	Sem configuraÁ„o de ip para interface';
 				return;
 			}
 		}

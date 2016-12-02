@@ -1,9 +1,9 @@
 <#
 	O mesmo que .config.ps1
-	Por√©m, s√£o configura√ß√µes que s√£o definidas somente em fase de desenvolvimento e o usu√°rio n√£o tem nenhum controle sobre elas.
+	PorÈm, s„o configuraÁıes que s„o definidas somente em fase de desenvolvimento e o usu·rio n„o tem nenhum controle sobre elas.
 	
-	Todas essas configura√ß√µes ser√£o adicionadas a configura√ß√£oa atual e caso o usu√°rio tenha definido algo, elas ser√£o substitu√≠das.
-	Elas ir√£o constar na hashtable de configura√ß√£o do agente, sempre com um "_" antes.
+	Todas essas configuraÁıes ser„o adicionadas a configuraÁ„oa atual e caso o usu·rio tenha definido algo, elas ser„o substituÌdas.
+	Elas ir„o constar na hashtable de configuraÁ„o do agente, sempre com um "_" antes.
  #>
  
 $KEYSDEF_DIR = "\config\keys"
@@ -11,14 +11,14 @@ $KEYSDEF_DIR = "\config\keys"
  
 return @{ 
 
-	#Keys groups mandat√≥rios e de debug...
+	#Keys groups mandatÛrios e de debug...
 	_KEYS_GROUP = @{
 		DEBUG = @(
 			"\core\debug\keys\DebugKeys.keys.ps1"
 		)
 	}
 	
-	#Vers√£o!
+	#Vers„o!
 	_VERSION = "1.0"
 	
 }

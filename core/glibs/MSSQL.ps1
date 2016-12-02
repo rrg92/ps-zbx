@@ -1,15 +1,15 @@
-#Cont√©m fun√ß√µes relacionadas a regras e intera√ß√µes com o SQL Server!
+#ContÈm funÁıes relacionadas a regras e interaÁıes com o SQL Server!
 
 
-#Trata o nome da inst√¢ncia adequadamente para se adequar a certos valores que possam ser informados
-#Por fun√ß√µes que capturam o nome da mesma 
+#Trata o nome da inst‚ncia adequadamente para se adequar a certos valores que possam ser informados
+#Por funÁıes que capturam o nome da mesma 
 Function PrepareServerInstanceString($ServerInstance){
 	
-	#Se a inst√¢ncia √© nomeada e cont√©m "MSSQLSERVER" como nome, ent√£o considera como inst√¢ncia default.
+	#Se a inst‚ncia È nomeada e contÈm "MSSQLSERVER" como nome, ent„o considera como inst‚ncia default.
 	if($Instance -like "*\MSSQLSERVER"){ 
 		$InstanceName	= @($Instance -split "\\")[0]
 	} else {
-		#Se a inst√¢ncia cont√©m "\" no nome, ent√£o troca a barra por "$"
+		#Se a inst‚ncia contÈm "\" no nome, ent„o troca a barra por "$"
 		$InstanceName	= $Instance.replace("$","\"); 
 	}
 	

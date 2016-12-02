@@ -1,6 +1,6 @@
 #Carrega todos os arquivos do diretorio atual 
 param(
-	#Load libs espera o diretorio base para que seja configurado a vari√°vel!!!
+	#Load libs espera o diretorio base para que seja configurado a vari·vel!!!
 	$BASE_DIR
 	,[switch]$DebugMode
 )

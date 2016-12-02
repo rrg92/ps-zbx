@@ -1,6 +1,6 @@
-#ContÃ©m diversas funÃ§Ãµes usadas pelos agentes para obter informaÃ§Ãµes e configuraÃ§Ãµes.
+#Contém diversas funções usadas pelos agentes para obter informações e configurações.
 
-#ObtÃ©m as configuraÃ§Ãµes read_only
+#Obtém as configurações read_only
 Function GetReadOnlyConfig(){
 	$ReadOnlyConfigFile = (GetBaseDir) + "\core\agents\readonly.config.ps1";
 	
@@ -11,7 +11,7 @@ Function GetReadOnlyConfig(){
 	return (& $ReadOnlyConfigFile);
 }
 
-#ObtÃ©m as configuraÃ§Ãµes padroes
+#Obtém as configurações padroes
 Function GetDefaultConfig(){
 	$DefaultConfigFile = (GetBaseDir) + "\core\agents\.config.ps1";
 	
@@ -23,7 +23,7 @@ Function GetDefaultConfig(){
 }
 
 
-#Retorna o caminho para o arquivo de configuraÃ§Ã£o do agente, definido pelo usuÃ¡rio.
+#Retorna o caminho para o arquivo de configuração do agente, definido pelo usuário.
 Function GetUserConfigFile(){
 	$ConfigDir 	= GetConfigDir
 	$AgentName	= GetAgentBaseName
@@ -31,13 +31,13 @@ Function GetUserConfigFile(){
 }
 
 
-#ObtÃ©m um arquivo de log do agente!
+#Obtém um arquivo de log do agente!
 Function GetAgentLogFile($LogFileName){
 	return (GetLogDir) + "\psagents\" + $LogFileName
 }
 
 
-#Importa os mÃ³dulos necessÃ¡rios para o agente
+#Importa os módulos necessários para o agente
 Function ImportAgentPsModules(){
 	ImportPowershellModules "XLogging","CustomMSSQL"
 }

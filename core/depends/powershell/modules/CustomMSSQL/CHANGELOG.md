@@ -2,6 +2,18 @@
 All important changes to this project will be added to this file!
 This changelog will be based on [Keep a change log](http://keepachangelog.com/)
 
+## [0.6.5] - 2016-12-08
+### Changed
+- (Send-SQL2Zabbix) Fixed issue #14 on caching mechanism.
+
+## [0.6.4] - 2016-12-06
+### Added
+- (Send-SQL2Zabbix) Added cache mechanism support via paramter -CacheFolder
+
+## [0.6.3] - 2016-12-05
+### Added
+- (Send-SQL2Zabbix) Added AppName parameter!
+
 ## [0.6.2] - 2016-07-27
 ### Added
 - (Invoke-NewQuery) Added beta versions of Invoke-NewQuery (Invoke-NewQueryBeta) that now can process messages and multiple resultsets! 
@@ -40,7 +52,9 @@ This changelog will be based on [Keep a change log](http://keepachangelog.com/)
 ### Changed
 - The module psd1 file was updated to correct version!
 
-
+[0.6.5]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.5
+[0.6.4]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.4
+[0.6.3]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.3
 [0.6.2]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.2
 [0.6.1]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.1
 [0.6.0]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.0

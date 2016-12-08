@@ -161,6 +161,7 @@ try {
 		$LogFileBaseName=$InstanceName.replace("\","$")+"."+$LogFileNameBaseExtension;
 		$LogFileName = GetAgentLogFile $LogFileBaseName;
 		
+		
 
 	#Prepara os parâmetros a serem enviados usando Send-SQL2Zabbix!
 		$Params = @{
@@ -177,6 +178,11 @@ try {
 			UserCustomData 	= @{
 								SQLPINGLOGDIR = "$($CONFIG.LOGBASE_DIR)\sqlping"
 							}
+			CacheFolder		= $CONFIG.CACHE_DIR
+		}
+		
+		if($CONFIG.SQL_APP_NAME){
+			$Params.add("SQLAppName",$CONFIG.SQL_APP_NAME)
 		}
 
 		if($DebugMode){

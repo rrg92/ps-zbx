@@ -1,3 +1,6 @@
+param(
+	[switch]$RunningOnly = $false
+)
 <#
 	Identifica as instâncias SQL existentes em uma máquina!!!
 	Sera retornado um array de objetos representando cada instancia encontrada.
@@ -39,20 +42,27 @@ $SQLInstances = @{}
 #Obtém os serviços que podem ser de instância SQL!
 $SQLServices = @(Get-Service 'mssql$*' -EA "SilentlyContinue") + @(Get-Service "mssqlserver" -EA "SilentlyContinue");
 
-$SQLServices | %{
+$SQLServices | ?{$_.State -eq "Running" -or !$RunningOnly} | %{
 
 	$Service =  $_.Name;
 	
 	$InstanceName = $_.name -replace 'mssql\$','';
 	
+	if($Service  -like 'mssql$*'){
+		$IsDefault = $false;
+	} else {
+		$IsDefault = $true
+	}
+	
 	$SQLInstances.add($InstanceName,(New-Object PSObject -Prop @{
 													ComputerName = $Env:ComputerName
 													ServerName = $null
 													IsClustered = $false
-													InstanceName = $InstanceName
+													InstanceName = $InstanceName.toUpper()
 													ServiceName = $_.Name
+													InstanceLeftName = $null
 													Network = (New-Object PSObject -Prop @{IP=$null;DNS=$SourceComputer;Domain=$null;FullName=$null})
-													
+													IsDefault = $IsDefault
 												}));
 }
 
@@ -142,7 +152,7 @@ $SQLInstances.GetEnumerator() | %{
 	
 	$CurrentO = $_.Value;
 	$LeftName = $CurrentO.Network.DNS;
-	
+	$CurrentO.InstanceLeftName = $LeftName;
 	
 	if(!$LeftName){
 		$LeftName = $CurrentO.Network.IP;
@@ -150,6 +160,7 @@ $SQLInstances.GetEnumerator() | %{
 	
 	$LeftName += '\' + $CurrentO.InstanceName;
 	$CurrentO.ServerName = $LeftName;
+	
 	
 	$CurrentO.Network.FullName = $CurrentO.Network.DNS
 	

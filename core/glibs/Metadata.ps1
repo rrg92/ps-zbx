@@ -30,6 +30,12 @@ Function GetModulesDir {
 	return (GetBaseDir) + '\core\depends\powershell\modules'
 }
 
+#Retorna o caminho para o diretorio de install
+Function GetInstallDir {
+	return (GetBaseDir) + '\install'
+}
+
+
 
 #Retorna o nome base do agente. Que é o nome do arquivo, sem a extensão .ps1
 Function GetAgentBaseName(){
@@ -147,9 +153,15 @@ Function ImportPowershellModules($ModuleList = $null){
 
 #Cria um nome de arquivo para log!
 #Log virá com um timestamp!
-Function GetLogFileName($Prefix, $Dir = $null){
-	$ts = (Get-Date).toString("yyyyMMdd_HHmmSS")
-	$LogFileName = "$ts.log";
+Function GetLogFileName($Prefix = $null, $Dir = $null, [switch]$AsDir = $false){
+	$ts = (Get-Date).toString("yyyyMMdd_HHmmss")
+	
+	if($AsDir){
+		$LogFileName = "$ts";
+	} else {
+		$LogFileName = "$ts.log";
+	}
+	
 	
 	if($Prefix){
 		$LogFileName = $Prefix +'.'+ $LogFileName; 
@@ -158,9 +170,18 @@ Function GetLogFileName($Prefix, $Dir = $null){
 	if($dir){
 		$LogFileName = $Dir +'\'+ $LogFileName 
 	}
+	
+	if($AsDir) {
+		try {
+			mkdir $LogFileName -force | Out-Null;
+		} catch {
+			throw 'CANNOT_CREATE_LOG: $_'
+		}
+	}
 
 	return $LogFileName;
 }
+
 
 
 #Obtem o caminho para um diretorio de backup!

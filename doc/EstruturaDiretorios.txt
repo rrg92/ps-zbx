@@ -29,3 +29,7 @@ São eles:
 		
 		Contém arquivos e diretórios usados em processos de upgrade.
 		Não deve ser alterado pelo usuário.
+
+	* cache
+	
+		Contém o cache de alguns arquivos usados pelo processo.

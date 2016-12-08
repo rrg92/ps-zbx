@@ -12,6 +12,7 @@ param(
 	,$VisibleNamePrefix	= ""
 	,$AgentPort			= 10050
 	,$InterfaceNetwork	= ""
+	,$SQLCreds			= @()
 )
 <#
 	Descobre os hosts SQL para serem criados no zabbix!
@@ -22,10 +23,10 @@ $CurrentFile = $MyInvocation.MyCommand.Definition
 $CurrentDir  = [System.Io.Path]::GetDirectoryName($CurrentFile)
 $BaseDir	 = [System.Io.Path]::GetDirectoryName($CurrentDir);
 
-#Libs do componente de install. Note que estas libs são diferentes.
+#Libs do componente de install. Note que estas libs sÃ£o diferentes.
 	$LibsDir = $BaseDir + "\core\glibs"
 
-#Se não consegue encontrar o diretorio de libs...
+#Se nÃ£o consegue encontrar o diretorio de libs...
 	if(![System.IO.Directory]::Exists($LibsDir)){
 		throw "LIB_DIR_NOT_FOUND: $LibsDir"
 	}
@@ -40,8 +41,8 @@ $BaseDir	 = [System.Io.Path]::GetDirectoryName($CurrentDir);
 	}
 	$DebugMode = $OriginalDebugMode;
 
-#importa os módulos dependnetes!!!
-	ImportPowershellModules 'power-zabbix'
+#importa os mÃ³dulos dependnetes!!!
+	ImportPowershellModules 'power-zabbix','CustomMSSQL'
 	
 #Configura o diretorio de log!
 	$InstallLogDir = (GetDefaultLogDir) + '\log\install';
@@ -122,10 +123,9 @@ switch ($Source){
 
 
 
-
-
 if($DiscoveredSQL){
-	write-host "discovered SQL: $($DiscoveredSQL.count)"
+	write-host "Discovered SQL: $($DiscoveredSQL.count)"
+	
 
 	#Para cada SQL que foi identificado, cria os dados no Zabbix!
 	Set-ZabbixConnection -url $ZabbixURL;
@@ -149,17 +149,26 @@ if($DiscoveredSQL){
 		$currentSQl = $_;
 		write-host "Creating zabbix host for $($currentSQl.ServerName)"
 	
-		$HostName = $currentSQl.ServerName.replace("\"," ");
+		if($currentSQL.IsDefault){
+			$CurrentInstanceName = $_.InstanceLeftName;
+		} else {
+			$CurrentInstanceName = $_.ServerName;
+		}
+		
+		$HostName 		= $CurrentInstanceName.replace("\"," ").toUpper();
+		$VisibleName	= $CurrentInstanceName.toUpper();
 		
 		if($HostNamePrefix){
-			$HostName = "$HostNamePrefix $HostName";
+			$HostName = $HostNamePrefix + $HostName;
+		}
+		
+		if($VisibleNamePrefix){
+			$VisibleName = $VisibleNamePrefix + $VisibleName;
 		}
 		
 		[hashtable[]]$Interfaces = @();
 		
-		
-		
-		
+	
 		if($currentSQL.Network.FullName -like '*.*'){
 			$Interfaces = Get-InterfaceConfig -Address $CurrentSQL.Network.FullName -Port $AgentPort	
 		} else {
@@ -188,8 +197,7 @@ if($DiscoveredSQL){
 				
 				
 			} else {
-				write-host '	Sem configuração de ip para interface';
-				return;
+				$Interfaces = Get-InterfaceConfig -Address $CurrentSQL.ComputerName -Port $AgentPort; 
 			}
 		}
 		
@@ -197,12 +205,11 @@ if($DiscoveredSQL){
 
 
 		try {
-			$hostId = Create-ZabbixHost -HostName $HostName -Interface $Interfaces -Groups $Groups -Templates $Template
+			$hostId = Create-ZabbixHost -HostName $HostName -VisibleName $VisibleName -Interface $Interfaces -Groups $Groups -Templates $Template
 			write-host "	Host id: $($hostId.hostids)"
 		} catch {
 			write-host "	Failed: $_"
 		}
-		
 	}
 }
 

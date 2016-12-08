@@ -224,3 +224,47 @@ Function InstallSolution {
 	#Limpa o diretorio de log...
 	gci ($DestinationBase+'\log\*') -recurse | ? {!$_.PsIsContainer} | Remove-Item -force;
 }
+
+
+Function GetInstallMSSQLScript {
+	param($ScriptName)
+
+	$InstallDir = GetInstallDir
+	$ScriptFile	= $InstallDir + '\mssql' +'\'+ $ScriptName;
+	
+	return $ScriptFile;
+}
+
+
+Function CreateSQLJobs {
+	param($SQLInstance, $BaseDir, $Creds)
+
+	$SQLAuth = @{
+		AuthType="Windows";
+		Login="";
+		Password="";
+	}
+	
+	if($Creds){
+		$SQLAuth.Login = $Creds.GetNetworkCredentials().UserName
+		$SQLAuth.Password = $Creds.GetNetworkCredentials().Password
+	}
+	
+	
+	$SQLJobDefault = GetInstallMSSQLScript 'jobs\JOBZabbixDefault.sql';
+	$Vars = @{
+		JobName 	= 'DBA: MON DEFAULT' 
+		BaseDir		= $BaseDir
+		AgentName	= 'DEFAULT.ps1'
+		KeysGroup	= 'DEFAULT'
+	}
+	$SQLScript = ReplaceSQLPsZbxVar -SQLScript $SQLJobDefault -Vars $Vars;
+	
+	try {
+		write-host 'Criando jobs default...';
+		Invoke-NewQuery -ServerInstance $SQLInstance -Logon $SQLAuth -Query $SQLScript -Database 'msdb'
+	} catch {
+		write-host 'Falha ao criar o job $($Vars.JobName): $_. Crie manualmente depois!'
+	}
+}
+

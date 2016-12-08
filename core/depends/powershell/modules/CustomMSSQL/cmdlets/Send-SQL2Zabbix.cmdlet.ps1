@@ -37,12 +37,27 @@ Function Send-SQL2Zabbix {
 		 #This member will be available on "USER.CUSTOM" member!
 			$UserCustomData = $null
 			
+		,#Allows cache networks  keys files in a local path.
+		 #If non empty, must be a path to a local path to cache keys retrivied from entwork.
+		 #The keys taht starts with '\\server\' will be donwloaded.
+		 #The script will donwload files only if modification date is later thant current file date.
+		 #This check will be made in "ReloadTime" basis!
+			$CacheFolder = $null
+		
+			
 		,#This controls the logging.
 		 #Specifies level between brackets. 
 			$LogTo = "#"
 		
 		,#Specifies log level.
 			$LogLevel = "DETAILED"
+			
+		,#Specifies app name to be used in sql
+			$SQLAppName="SQL2ZABBIX"
+			
+		,#Enables script to no execute zabbixer sender tool. It just dump results...
+		 #Used for debug purposes only.
+			[switch]$NoSenderMode = $false
 	)
 
 $ErrorActionPreference = "stop";
@@ -57,6 +72,17 @@ $ErrorActionPreference = "stop";
 				ZABBIX					= @{SERVER=$null;PORT=$NULL}
 				PARAMS					= (GetAllCmdLetParams)
 				USER 					= @{INSTANCE_NAME=$Instance;CUSTOM=$UserCustomData}
+				
+				#Controls de cache!
+				CACHE					= @{
+											ENABLED = $false
+											FOLDER 	= $NULL
+											BASE_FODLER = $NULL
+											DB = @{}
+											DB_FILE = $null
+											LOADED=$false;
+											READY=$false
+										}
 			}
 	
 	
@@ -89,30 +115,33 @@ $ErrorActionPreference = "stop";
 	
 #Choosing a zabbix sender
 
-	:FindPath foreach($SenderPath in @($ZabbixSender)){
-		Log "Checking if zabbix sender path $SenderPath exists" 
-		if([System.IO.File]::Exists($SenderPath)){
-			Log "	Found! This will be used!"
-			$VALUES.ZABBIX_SENDER = $SenderPath;
-			break :FindPath;
+	if(!$NoSenderMode){
+		:FindPath foreach($SenderPath in @($ZabbixSender)){
+			Log "Checking if zabbix sender path $SenderPath exists" 
+			if([System.IO.File]::Exists($SenderPath)){
+				Log "	Found! This will be used!"
+				$VALUES.ZABBIX_SENDER = $SenderPath;
+				break :FindPath;
+			}
+		}
+		
+		if(!$VALUES.ZABBIX_SENDER){
+			Log "	No Zabbix Sender executable found!" 
+			return;
 		}
 	}
-	
-	if(!$VALUES.ZABBIX_SENDER){
-		Log "	No Zabbix Sender executable found!" 
-		return;
-	}
+
 
 #This part simply get hostname from a custom script if hostname isn't provided.
 #Future implementation must alow user specify a custom script.
 
 	$HostNameScript = {
 			param($VALUES)
-			
-			$InstanceName = Invoke-NewQuery -ServerInstance $Instance -Query "SELECT @@SERVERNAME as FullServerName" -AppName "SQL2ZABBIX";
+			$InstanceName = Invoke-NewQuery -ServerInstance $Instance -Query "SELECT @@SERVERNAME as FullServerName" -AppName $SQLAppName;
 			$VALUES.HOSTNAME = $InstanceName.FullServerName.replace("\"," ");
 			$VALUES.USER.INSTANCE_NAME = $InstanceName.FullServerName;
 		}
+
 		
 	if(!$VALUES.HOSTNAME){
 		Log "Getting hostname from custom script!"
@@ -131,6 +160,32 @@ $ErrorActionPreference = "stop";
 	
 	$VALUES.HOSTNAME = $VALUES.HOSTNAME;
 	Log "	HostName is: $($VALUES.HOSTNAME)"
+
+	if($CacheFolder){
+		
+		Log " Caching enabled!"
+		
+		$SubFolder = $VALUES.HOSTNAME;
+		@([IO.Path]::GetInvalidPathChars()) | %{
+			$SubFolder = $SubFolder.replace($_.toString(),'');
+		}
+	
+		$VALUES.CACHE.FOLDER 		= $CacheFolder + '\' + $SubFolder
+		$VALUES.CACHE.BASE_FODLER 	= $CacheFolder
+		$VALUES.CACHE.ENABLED  		= $true;
+		
+		#IF folder doenst not exits, creates a new one!
+		if(![IO.Directory]::Exists($VALUES.CACHE.FOLDER )){
+			$NewCacheFolder = mkdir $VALUES.CACHE.FOLDER -force;
+		}
+		
+		#If db doents exists, create a new one!
+		$DbFileName = $VALUES.CACHE.FOLDER + '\' + 'mapping.xml';
+		$VALUES.CACHE.DB_FILE = $DBFileName;
+		
+		Log " 	Base folder: $($VALUES.CACHE.BASE_FODLER). Current Host folder: $($VALUES.CACHE.BASE_FODLER)"
+	}
+	
 	
 #Lets interpret zabbix server info
 	
@@ -150,6 +205,159 @@ $ErrorActionPreference = "stop";
 #This is all functions responsible for getting keys and determing which is sql source or powershell source...
 	
 	
+	#Functions to manage local cache!
+		Function UpdateLocalCacheFile {
+		
+			Log "Updating local cache file!!!!" "VERBOSE"
+			
+			try {
+				$VALUES.CACHE.DB | Export-CliXML $VALUES.CACHE.DB_FILE
+			} catch {
+				throw 'UPDATE_LOCAL_CACHE_FILE_ERROR: $_';
+			}
+			
+		}
+		
+		Function LoadLocalCacheFile {
+			try {
+				if(!$VALUES.CACHE.LOADED){
+					if([IO.File]::Exists($VALUES.CACHE.DB_FILE)){
+						Log "Loading cache database from $($VALUES.CACHE.DB_FILE)" "VERBOSE"
+						$VALUES.CACHE.DB = Import-CliXML $VALUES.CACHE.DB_FILE
+						$VALUES.CACHE.LOADED=$true;
+					}
+				}
+			} catch {
+				throw "LOAD_LOCAL_CACHE_FILE_ERROR: $_";
+			}
+			
+		}
+	
+		Function SetupLocalCache {
+	
+			if($VALUES.CACHE.READY){
+				return;
+			}
+	
+			Log "Setting up local cache" "VERBOSE"
+	
+			#Loads database from file!
+			LoadLocalCacheFile
+			
+			$LocalCacheDB = $VALUES.CACHE.DB;
+
+			#Maps network file to a local file!
+			if(!$LocalCacheDB.Contains("FILE_MAP")){
+				$LocalCacheDB.add("FILE_MAP",@{});
+			}
+			
+			$VALUES.CACHE.READY = $true;
+		}
+	
+		Function GetNewFileCacheName {
+			param($RemoteName)
+			
+			[string]$NewFileGuid =  ([Guid]::NewGuid()).Guid.replace('-','');
+			$FileExt = [Io.Path]::GetExtension($RemoteName);
+			$BaseName = [Io.Path]::GetFileNameWithoutExtension($RemoteName);
+			$FileName = $BaseName +'.'+$NewFileGuid.replace("-","") + $FileExt;
+			return $Filename;
+		}
+	
+		Function GetFileCachePath {
+			param($FileName)
+			
+				$FileExt =  [Io.Path]::GetExtension($FileName);
+				$BaseFileTypeDir =  $VALUES.CACHE.FOLDER +'\'+ $FileExt.replace('.','');
+				
+				if(![Io.Directory]::Exists($BaseFileTypeDir)){
+					$NewBaseDirr = mkdir $BaseFileTypeDir -force;
+				}
+				
+				$FullLocalPath = $BaseFileTypeDir +'\'+ $FileName;
+				return $FullLocalPath;
+		}
+	
+		Function GetFileFromCache {
+			param([string]$RemoteName)
+			
+			#If cache is enabled and file is a remote...
+			if($VALUES.CACHE.ENABLED){
+				$FileURI = New-Object Uri($RemoteName);
+				if(!$FileURI.IsUnc){
+					return $RemoteName;
+				}
+			} else {
+				return $RemoteName;
+			}
+			
+			SetupLocalCache;
+			
+			$FileMap = $VALUES.CACHE.DB.FILE_MAP;
+			$CacheFilePath = $null;
+			
+			#Search file name in mapping...
+			if($FileMap.Contains($RemoteName)){
+				#Check if file needs be updated!
+				$CacheEntry = $FileMap[$RemoteName];
+				$FullLocalPath = GetFileCachePath  $CacheEntry.FileName 
+
+				Log "Remote $RemoteName cached: $($FullLocalPath) lastDownloadTime: $($CacheEntry.LastDownloadTime)" "VERBOSE"
+				
+				if(![Io.File]::Exists($FullLocalPath)){
+					try {
+						Log "CacheManager: The local path $FullLocalPath (original: $( $RemoteName)) was not found. Trying re-copy!" "DETAILED";
+						copy -Path $RemoteName -Destination $FullLocalPath -force;
+						$CacheEntry.LastDownloadTime = (Get-Date);
+						UpdateLocalCacheFile;
+						Log "Sucess!" "DETAILED"
+					} catch {
+						Log "	Cannot recopy! Error: $_" "DETAILED";
+						return $null;
+					}
+				}
+				
+				try {
+					$RemoteFile = Get-Item $RemoteName;
+					
+					Log "Remote last modification time: $($RemoteFile.LastWriteTime)" "VERBOSE"
+					
+					if($RemoteFile.LastWriteTime -ge $CacheEntry.LastDownloadTime){
+						Log "Updating local copy!" "VERBOSE"
+						copy -Path $RemoteName -Destination $FullLocalPath -force;
+						$CacheEntry.LastDownloadTime = (Get-Date);
+						UpdateLocalCacheFile
+					}
+				} catch {
+					Log "	Cannot make update check process on remote file $RemoteName. Error: $_" "DETAILED"
+				}
+
+				$CacheFilePath = $FullLocalPath
+			} else {
+				#Generate a new file name!
+				$NewFileName = GetNewFileCacheName $RemoteName;
+				$FullLocalPath = GetFileCachePath $NewFileName 
+				
+				Log "Remote $RemoteName not cached: creating a new on $FullLocalPath" "VERBOSE"
+				
+				#Copy remote file to filename!
+				try {
+					copy -Path $RemoteName -Destination $FullLocalPath -force;
+					$FileMap.add($RemoteName,@{FileName=$NewFileName; LastDownloadTime=(Get-Date)});
+					UpdateLocalCacheFile
+				} catch {
+					Log "	Cannot cache $RemoteName into $FileName. Error: $_" "DETAILED"
+					return $null;
+				}
+
+				$CacheFilePath = $FullLocalPath
+			}
+			
+			Log "Remote file $($RemoteName) will be $FullLocalPath" "VERBOSE"
+			return $CacheFilePath;
+		}
+		
+	
 	#This function just expand keys definitions.
 	#For example, if user pass a file, this function will execute the file in order to get hashtable with the keys!
 	Function UpdateKeysForGet {
@@ -160,6 +368,8 @@ $ErrorActionPreference = "stop";
 		foreach($KeyDef in $KeysDefinitions){
 			
 			if($KeyDef -is [string]){
+				$KeyDef = GetFileFromCache $KeyDef;
+
 				if(![System.IO.File]::Exists($KeyDef)){
 					throw "INVALID_KEY_DEFINITIONS: FileNotExists $KeyDef";
 				}
@@ -187,7 +397,6 @@ $ErrorActionPreference = "stop";
 	
 		return $AllKeysDefintions;
 	}
-
 	
 	#Thus function will resolve need keys for collect and associated execution engine (eg: sql script or powershell script block).
 	Function UpdateKeysFinal {
@@ -240,8 +449,9 @@ $ErrorActionPreference = "stop";
 					
 					
 					if([System.IO.File]::Exists($KeySource.SOURCE)){
+						$KeySource.SOURCE = GetFileFromCache $KeySource.SOURCE;
 						$KeySource.add("QUERY",((Get-Content $KeySource.SOURCE) -join "`r`n")); #Pre caches query in order to save time to read from disk each time.
-					} else {
+					} else {	
 						Log "Key $KeyName will ignored because specified file dont was found: $($KeySource.SOURCE)" $Logging
 						continue :KeysForGet;
 					}
@@ -303,7 +513,7 @@ do {
 		Log "		Executing source for key $($k.KEY)" "VERBOSE"
 		try {
 			if($k.SOURCE.TYPE -eq "SQL"){
-				$queryResults = Invoke-NewQuery -ServerInstance $Instance -Query $k.SOURCE.QUERY -AppName "SQL2ZABBIX"
+				$queryResults = Invoke-NewQuery -ServerInstance $Instance -Query $k.SOURCE.QUERY -AppName $SQLAppName
 			}
 			elseif($k.SOURCE.TYPE -eq "PS") {
 				$queryResults = @(& $k.SOURCE.SCRIPT $VALUES)
@@ -425,9 +635,16 @@ do {
 			
 			# Sending data to server
 			Log "		Sending... Calling script: $FinalSenderScript" "VERBOSE"
-			$ErrorActionPreference = "continue";
-			$Response = & $FinalSenderScript 2>&1
-			$ErrorActionPreference = "stop";
+			
+			if($NoSenderMode){
+				write-host "NoSenderMode: $FinalSenderScript";
+			} else {
+				$ErrorActionPreference = "continue";
+				$Response = & $FinalSenderScript 2>&1
+				$ErrorActionPreference = "stop";
+			}
+			
+			
 			
 			
 			# Getting time info for informational and debugging purposes.

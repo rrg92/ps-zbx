@@ -140,7 +140,7 @@ try {
 
 	#If for pra determinar o hostname de modo dinâmico...
 	if(!$HostName -and $DynamicHostName){
-		$HostName = . $CONFIG.DYNAMIC_HOSTNAME_SCRIPT @{Instance=$Instance};
+		$HostName = & $CONFIG.DYNAMIC_HOSTNAME_SCRIPT @{Instance=$Instance};
 	}
 
 

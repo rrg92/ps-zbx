@@ -17,9 +17,10 @@ Function Upgrade {
 	#O diretoriio de backup fica no diretorio upgrade.
 	$Backupdir = GetUpgradeBackupDir $DestBaseDir
 	
+	write-host "BackupDir: $Backupdir"
 	#Faz o backup da estrutura existente para recuperação em caso de erros!
 	try {
-		#Copia os diretórios, exceto o diretorio de upgrade, pois ele pode contar muitos outros arquivos!!
+		#Copia os diretórios, exceto o diretorio de upgrade e de cache! pois ele pode contar muitos outros arquivos!!
 		$Dirs | ?{ 'upgrade' -NotContains $_.Name} | copy -recurse -Destination $Backupdir;
 	} catch {
 		throw "CANNOT_BACKUP_EXISTENT_DIR: BackupDir: $BackupDir Error: $_";
@@ -28,8 +29,6 @@ Function Upgrade {
 	#Remove toda a estrutura existente, que será substituída pela nova!
 	write-host "Removendo diretórios existentes!"
 	$Removed = @(); #Esta variável irá conter os diretório que já foram removidos!
-	$InRollback = $false #Esta variável irá indicar se o processo entrou em rollback.
-	$StartRollback = $true;
 	#Para sub-diretorio...
 	$StartRollback = $false;
 	try {

@@ -196,7 +196,7 @@ Function GetUpgradeBackupDir {
 	$ts = (Get-Date).toString("yyyyMMdd_HHmmss");
 	$BackupDir = $BaseDir + "\upgrade\$ts"
 	
-	if(![System.IO.Directory]::Exists){
+	if(![System.IO.Directory]::Exists($BackupDir)){
 		$CreatedDir = mkdir $BackupDir -force;
 	}
 

@@ -1,3 +1,4 @@
+[CmdLetBinding()]
 param($CopyPaths = $null)
 
 

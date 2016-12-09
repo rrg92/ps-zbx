@@ -183,7 +183,7 @@ $ErrorActionPreference = "stop";
 		$DbFileName = $VALUES.CACHE.FOLDER + '\' + 'mapping.xml';
 		$VALUES.CACHE.DB_FILE = $DBFileName;
 		
-		Log " 	Base folder: $($VALUES.CACHE.BASE_FODLER). Current Host folder: $($VALUES.CACHE.BASE_FODLER)"
+		Log " 	Base folder: $($VALUES.CACHE.BASE_FODLER). Current Host folder: $($VALUES.CACHE.FOLDER)"
 	}
 	
 	

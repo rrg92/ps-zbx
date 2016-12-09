@@ -162,6 +162,12 @@ try {
 		$LogFileName = GetAgentLogFile $LogFileBaseName;
 		
 		
+		$Send2ZabbixExecId = $HostName;
+		
+		if($KeysGroup){
+			$Send2ZabbixExecId += '-'+$KeysGroup;
+		}
+		
 
 	#Prepara os parâmetros a serem enviados usando Send-SQL2Zabbix!
 		$Params = @{
@@ -179,6 +185,7 @@ try {
 								SQLPINGLOGDIR = "$($CONFIG.LOGBASE_DIR)\sqlping"
 							}
 			CacheFolder		= $CONFIG.CACHE_DIR
+			ExecutionID		= $Send2ZabbixExecId
 		}
 		
 		if($CONFIG.SQL_APP_NAME){

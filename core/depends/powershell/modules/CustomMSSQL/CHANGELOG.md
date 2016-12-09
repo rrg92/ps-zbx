@@ -2,6 +2,13 @@
 All important changes to this project will be added to this file!
 This changelog will be based on [Keep a change log](http://keepachangelog.com/)
 
+## [0.6.7] - 2016-12-09
+### Added
+- (Send-SQL2Zabbix) In order to fix issue #19, an execution id parameter was created!
+### Changed
+- (Send-SQL2Zabbix) Fixed issue #19 on caching mechanism.
+
+
 ## [0.6.6] - 2016-12-09
 ### Changed
 - (Send-SQL2Zabbix) Fixed issue #17 on caching mechanism.
@@ -56,6 +63,7 @@ This changelog will be based on [Keep a change log](http://keepachangelog.com/)
 ### Changed
 - The module psd1 file was updated to correct version!
 
+[0.6.7]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.7
 [0.6.6]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.6
 [0.6.5]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.5
 [0.6.4]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.4

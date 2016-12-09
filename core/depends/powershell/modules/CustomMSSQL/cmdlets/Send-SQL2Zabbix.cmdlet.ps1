@@ -43,6 +43,11 @@ Function Send-SQL2Zabbix {
 		 #The script will donwload files only if modification date is later thant current file date.
 		 #This check will be made in "ReloadTime" basis!
 			$CacheFolder = $null
+			
+		,#Specify a execution id
+		 #By default the script attemps generate a id. This id will be logged.
+		 #This value will identify uniquely this execution, and this will be useful in various script components, like caching folder name.
+			$ExecutionID = $null
 		
 			
 		,#This controls the logging.
@@ -62,6 +67,8 @@ Function Send-SQL2Zabbix {
 
 $ErrorActionPreference = "stop";
 	
+	
+
 #Global Values. USER must be used by user custom scripts...
 	$VALUES = @{
 				WIN_USERNAME			= [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
@@ -72,6 +79,7 @@ $ErrorActionPreference = "stop";
 				ZABBIX					= @{SERVER=$null;PORT=$NULL}
 				PARAMS					= (GetAllCmdLetParams)
 				USER 					= @{INSTANCE_NAME=$Instance;CUSTOM=$UserCustomData}
+				EXECUTION_ID			= $ExecutionID
 				
 				#Controls de cache!
 				CACHE					= @{
@@ -84,6 +92,12 @@ $ErrorActionPreference = "stop";
 											READY=$false
 										}
 			}
+			
+
+#Validating execution id...
+	if(!$VALUES.EXECUTION_ID){
+		$VALUES.EXECUTION_ID = ([Guid]::NewGuid()).Guid.ToString();
+	}
 	
 	
 #Lets use Logging facilities provide by CustomMSSQL module...
@@ -101,6 +115,7 @@ $ErrorActionPreference = "stop";
 	}
 	
 	Log "Script is starting! User: $($VALUES.WIN_USERNAME) Computer:$($VALUES.COMPUTER_NAME)"
+	Log "Script execution id is: $($VALUES.EXECUTION_ID)";
 	
 #Some dependencies
 
@@ -160,12 +175,19 @@ $ErrorActionPreference = "stop";
 	
 	$VALUES.HOSTNAME = $VALUES.HOSTNAME;
 	Log "	HostName is: $($VALUES.HOSTNAME)"
+	
+	#Determining execution id!
 
 	if($CacheFolder){
 		
 		Log " Caching enabled!"
 		
 		$SubFolder = $VALUES.HOSTNAME;
+		
+		if($VALUES.EXECUTION_ID){
+			$SubFolder += '\EXECID_' + $VALUES.EXECUTION_ID;
+		}
+		
 		@([IO.Path]::GetInvalidPathChars()) | %{
 			$SubFolder = $SubFolder.replace($_.toString(),'');
 		}

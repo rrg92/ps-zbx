@@ -1,4 +1,4 @@
-param($CmdLetsDir = ".\cmdlets", $AuxDir = ".\helpers", $ModulesDir = ".\modules")
+param($CmdLetsDir = ".\cmdlets", $AuxDir = ".\helpers")
 
 #For detailed informations about structure and internals about this code check !Help.txt file in module root directory.
 
@@ -20,7 +20,6 @@ $FunctionsToExport = @()
 $GMV = @{MODULE_ROOT=$ModuleRoot; PSM_PATH=$ModulePsm};
 $GMV.add("CMDLETSIDR",(Resolve-Path $CmdLetsDir))
 $GMV.add("AUXDIR",(Resolve-Path $AuxDir))
-$GMV.add("MODULESDIR",(Resolve-Path $ModulesDir).Path)
 $GMV.add("CHANGELOGFILE",(Resolve-Path ".\CHANGELOG.md"))
 $GMV.add("VARS",@{})
 
@@ -30,7 +29,7 @@ $GMV.add("VARS",@{})
 	
 	#Here, we generate a dummy name and append this to dynamic Function command in powershell.
 	$DummyFunctionName = "ImportDummy_"+[System.Guid]::NewGuid().Guid.replace("-","");
-	$DummyFunction = [scriptblock]::create("Function $DummyFunctionName{return 'CustomMSSQL';}")
+	$DummyFunction = [scriptblock]::create("Function $DummyFunctionName{return 'XLogging';}")
 
 	#Call command to import in current module.
 	. $DummyFunction;
@@ -39,10 +38,10 @@ $GMV.add("VARS",@{})
  	$CurrentModule = (Get-Command $DummyFunctionName).Module;
 
 	if(!$CurrentModule){
-		throw "CANNOT GET THE CURRENT MODULE OBJECT REFERENCE. CONTACT CUSTOMMMSQL DEVELOPER. rodrigo@thesqltimes.com | Dummy Function: $DummyFunctionName"
+		throw "CANNOT GET THE CURRENT MODULE OBJECT REFERENCE. CONTACT DEVELOPER. rodrigo@thesqltimes.com | Dummy Function: $DummyFunctionName"
 	}
 
-#At this point, we have reference to CustomMSSQL module.
+#At this point, we have reference to XLogging module.
 $GMV.add("CURRENT_MODULE",$currentModule);
 
 try {

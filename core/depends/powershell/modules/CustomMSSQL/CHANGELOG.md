@@ -2,6 +2,16 @@
 All important changes to this project will be added to this file!
 This changelog will be based on [Keep a change log](http://keepachangelog.com/)
 
+## [0.6.9] - 2016-12-15
+### Added
+- (Send-SQL2Zabbix) Services feature! Check cmdlet documentation for more details!
+
+## [0.6.8] - 2016-12-15
+### Added
+- Modules directory and the ImportDependencieModule dependency function added to support dependency modules in cmdlets.
+- (Send-SQL2Zabbix) Module CacheManager added to support caching feature
+
+
 ## [0.6.7] - 2016-12-09
 ### Added
 - (Send-SQL2Zabbix) In order to fix issue #19, an execution id parameter was created!
@@ -63,6 +73,8 @@ This changelog will be based on [Keep a change log](http://keepachangelog.com/)
 ### Changed
 - The module psd1 file was updated to correct version!
 
+[0.6.9]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.9
+[0.6.8]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.8
 [0.6.7]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.7
 [0.6.6]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.6
 [0.6.5]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.5

@@ -35,6 +35,11 @@ Function GetInstallDir {
 	return (GetBaseDir) + '\install'
 }
 
+#Retorna o objeto que representa o cache manager, se definido!
+Function GetCacheManager {
+	GetPsZbxVar "CACHE_MANAGER";
+}
+
 
 
 #Retorna o nome base do agente. Que é o nome do arquivo, sem a extensão .ps1
@@ -83,6 +88,7 @@ Function IsPathItem($ItemName, $ItemValue) {
 #Ex.: Os items com configuração \x\y vão virar C:\x\y (por exemplo).
 #A função já trata toda a expansão. Se houver items cujo o valor é outra hashtable, a função irá tratar adequadamente.
 #A função também trata adequadamente as expansões de item cujo o valor é um array de string... expandindo cada valor se necessário...
+#Também, a função irá trocar os arquvios remotos por suas versões no cache...
 
 Function ExpandDirs($Table, $HashPath = $null){
 	
@@ -96,6 +102,7 @@ Function ExpandDirs($Table, $HashPath = $null){
 	
 	#para cada key da hash...
 	$BaseDir = GetBaseDir;
+	
 	
 	@($Table.Keys) |  %{
 		$CurrentItem 	= $_;
@@ -126,6 +133,7 @@ Function ExpandDirs($Table, $HashPath = $null){
 				if($ExpandedValue[$i] -match '^\\[^\\].*'){
 					$ExpandedValue[$i] = $BaseDir  + $ExpandedValue[$i]
 				}
+				
 			}
 		}
 		

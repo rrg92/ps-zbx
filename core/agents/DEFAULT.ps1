@@ -1,9 +1,11 @@
-param($Instance
-	#Keys Group definem o grupo de keys a ser usado.
-	#	default: Usa as keys definidas como "default"
-	#	discovery: Usa as keys definidas como "discovery"
-	#	realtime: Usa as keys definidas como "realtime"
-	,$KeysGroup = $null
+param(
+
+	[parameter(Mandatory=$true)]
+		$Instance
+	
+	,[parameter(Mandatory=$true)]
+		$KeysGroup
+		
 	,[switch]$DebugMode = $false
 	,[switch]$ReturnExitCode = $false
 	,$PoolingTime = 0
@@ -14,6 +16,7 @@ param($Instance
 	,$LogFileNameExt = $null
 	,$LogLevel = "DETAILED"
 	,[switch]$DynamicHostName = $false
+	,$ConfigurationFile		  = $null
 )
 
 $ErrorActionPreference = "stop";
@@ -32,6 +35,18 @@ try {
 		}
 
 	#Carregando as funções das bibliotecas!
+	
+		#Monta uma string que identifica o agente. Essa string representa uma identificação unica do agente baseado nos parametros fornecidos.
+		$AgentID = $Instance.replace('\','$');
+		
+		if($KeysGroup){
+			$AgentID += ".$KeysGroup"
+		}
+		
+		if($DebugMode){
+			$AgentID += '.DEBUG'
+		}
+		
 
 	
 		$OriginalDebugMode = $DebugMode;
@@ -48,8 +63,39 @@ try {
 		SetPsZbxVar 'LIB_DIR' $LibsDir
 		SetPsZbxVar 'AGENT_BASENAME' $CurrentFileBase
 		
+		#importando módulos dependentes
+		ImportAgentPsModules
+		
+		#Configurando o mecanismo de log básico do agente!
+		$InstanceName = PrepareServerInstanceString $Instance 
+		$LogFileBaseName= $AgentID+".base.log";
+		$LogFileName = GetAgentLogFile $LogFileBaseName -BaseDir $BaseDir -Default;
+		$Log = New-LogObject
+		$Log.LogTo = "#",$LogFileName;
+		$Log.LogLevel = $LogLevel; 
+		$Log.UseDLD = $false
+		
+		$Log | Invoke-Log "PSZBX started. Agent $CurrentFileBase. Keysgroup: $KeysGroup"
+		
+		#Configurando o cache manager!
+		$AgentCache = New-CacheManager;
+		$AgentCache.logLevel = $Log.LogLevel;
+		$AgentCache.logTo = {
+			param($lp)
+			
+			$Log | Invoke-Log -Message $lp.message -Level $lp.level;
+		}
+		$AgentCache.cacheDirectory = "$BaseDir\cache\agentcache\"+$AgentID 
+		$AgentCache.init();
+		SetPsZbxVar 'CACHE_MANAGER' $AgentCache
+		
+		if($ConfigurationFile){
+			$ConfigFileName	 = $AgentCache.getFile($ConfigurationFile);
+			$Log | Invoke-Log "Using a supplied configuration file: $ConfigFileName"
+		} else{
+			$ConfigFileName		= GetUserConfigFile 
+		}
 
-		$ConfigFileName		= GetUserConfigFile
 		$USER_CONFIG = @{};
 		if([System.IO.File]::Exists($ConfigFileName)){
 			try {
@@ -57,30 +103,20 @@ try {
 			} catch {
 				throw "ERR_LOADING_USER_CONFIG_FILE: $_"
 			} 
+		} else {
+			$Log | Invoke-Log "Configuration file not found: $ConfigFileName"
 		}
 		
 		$CONFIG = DefineConfiguratons $USER_CONFIG;
 		
 		#Configura a variável CONFIG!
 		SetPsZbxVar 'AGENT_CONFIG' $CONFIG
-		
-		
-	#importando módulos dependentes
-	ImportAgentPsModules
-	
-	#Configurando o mecanismo de log básico do agente!
-	$InstanceName = PrepareServerInstanceString $Instance 
-	$LogFileBaseName=$InstanceName.replace("\","$")+".log";
-	$LogFileName = GetAgentLogFile $LogFileBaseName;
-	$Log = New-LogObject
-	$Log.LogTo = "#",$LogFileName;
-	$Log.LogLevel = "DETAILED"; 
-	$Log.UseDLD = $false
-	
-	$Log | Invoke-Log "PSZBX started. Agent $CurrentFileBase. Keysgroup: $KeysGroup"
-		
+
 	#Ajustando as constantes que possuem caminhos!
 	ExpandDirs $CONFIG 
+		
+
+
 
 #Aqui começa o processamento do script. ALterar somente mediante orientação de alguém que conheça
 
@@ -95,7 +131,7 @@ try {
 		$Keys = @()
 	
 		if(!$KeysGroup){
-			$KeysGroup = $CONFIG.DEFAULT_KEYS_GROUP;
+			throw 'INVALID_KEYS_GROUP: IS EMPTY'
 		}
 	
 		if($KeysGroup){
@@ -144,29 +180,18 @@ try {
 	}
 
 
-	#Determiuna o nome do arquivo de log baseado no nome da instância informado.
+	#Determina o nome do arquivo de log baseado no nome da instância informado.
 		$LogFileNameBaseExtension = $LogFileNameExt;
 		
 		if(!$LogFileNameBaseExtension){
-			if($KeysGroup){
-				$LogFileNameBaseExtension  = $KeysGroup.toLower()
-			} else {
-				$LogFileNameBaseExtension = '_nkg_'
-			}
-			
-			
-			$LogFileNameBaseExtension += ".log"
+			$LogFileNameBaseExtension  = $KeysGroup.toLower()  + '.log';
 		}
 		
 		$LogFileBaseName=$InstanceName.replace("\","$")+"."+$LogFileNameBaseExtension;
 		$LogFileName = GetAgentLogFile $LogFileBaseName;
 		
 		
-		$Send2ZabbixExecId = $HostName;
-		
-		if($KeysGroup){
-			$Send2ZabbixExecId += '-'+$KeysGroup;
-		}
+		$Send2ZabbixExecId = $AgentID;
 		
 
 	#Prepara os parâmetros a serem enviados usando Send-SQL2Zabbix!
@@ -184,7 +209,7 @@ try {
 			UserCustomData 	= @{
 								SQLPINGLOGDIR = "$($CONFIG.LOGBASE_DIR)\sqlping"
 							}
-			CacheFolder		= $CONFIG.CACHE_DIR
+			CacheFolder		= ($CONFIG.CACHE_DIR+'\send2zabbix')
 			ExecutionID		= $Send2ZabbixExecId
 		}
 		

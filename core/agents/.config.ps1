@@ -81,9 +81,6 @@ return @{
 	#E o valor deste item é um array, onde cada item do array especifica um caminnho.
 	KEYS_GROUP = @{}
 		
-	#Keygroup default! Este será usado quando não for especificado.
-	DEFAULT_KEYS_GROUP = $null
-	
 	#ApplicationName para ser usado nas conexão com as instâncias SQL ao executar os scripts das keys!
 	SQL_APP_NAME = $null
 	

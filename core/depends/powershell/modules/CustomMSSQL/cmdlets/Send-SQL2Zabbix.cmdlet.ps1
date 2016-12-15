@@ -80,24 +80,43 @@ $ErrorActionPreference = "stop";
 				PARAMS					= (GetAllCmdLetParams)
 				USER 					= @{INSTANCE_NAME=$Instance;CUSTOM=$UserCustomData}
 				EXECUTION_ID			= $ExecutionID
-				
-				#Controls de cache!
-				CACHE					= @{
-											ENABLED = $false
-											FOLDER 	= $NULL
-											BASE_FODLER = $NULL
-											DB = @{}
-											DB_FILE = $null
-											LOADED=$false;
-											READY=$false
-										}
+				SERVICES = (New-Object PSObject)
 			}
 			
+
+#Loading dependencies!
+	ImportDependencieModule 'CacheManager'
 
 #Validating execution id...
 	if(!$VALUES.EXECUTION_ID){
 		$VALUES.EXECUTION_ID = ([Guid]::NewGuid()).Guid.ToString();
 	}
+	
+	
+#Some important functions...
+
+	#Services features!
+
+		#This parts will contains many routines allowing users use many services provided by cmdlet!
+		$SERVICES_NAMES	= @(
+				"getFileFromCache"
+			)
+
+		#Register a service!
+		Function RegisterService {
+			param($ServiceName, $Script)
+			
+			if( $SERVICES_NAMES -Contains $ServiceName){
+				
+				if($VALUES.SERVICES | gm -Type "ScriptMethod" -Name $ServiceName){
+					throw "SERVICE_ALREADY_REGISTERED: $ServiceName" 
+				}
+				
+				$VALUES.SERVICES | Add-Member -Type ScriptMethod -Name $ServiceName -Value $Script;
+			} else {
+				throw "SERVICE_NOT_DEFINED: $ServiceName"
+			}
+		}
 	
 	
 #Lets use Logging facilities provide by CustomMSSQL module...
@@ -176,14 +195,22 @@ $ErrorActionPreference = "stop";
 	$VALUES.HOSTNAME = $VALUES.HOSTNAME;
 	Log "	HostName is: $($VALUES.HOSTNAME)"
 	
-	#Determining execution id!
-
+	#Determining caching configurations!
+	$CacheManager = New-CacheManager;
+	$CacheManager.logLevel = $Log.LogLevel;
+	$CacheManager.logTo = {
+		param($p)
+		
+		Log -message $p.Message -level $p.level
+	}
+	
+	
 	if($CacheFolder){
 		
-		Log " Caching enabled!"
+		Log "A cache directory was specified. Cache will be configured. Specified folder: $CacheFolder";
 		
+		Log "	Building the base cache manager directory!"
 		$SubFolder = $VALUES.HOSTNAME;
-		
 		if($VALUES.EXECUTION_ID){
 			$SubFolder += '\EXECID_' + $VALUES.EXECUTION_ID;
 		}
@@ -191,23 +218,23 @@ $ErrorActionPreference = "stop";
 		@([IO.Path]::GetInvalidPathChars()) | %{
 			$SubFolder = $SubFolder.replace($_.toString(),'');
 		}
-	
-		$VALUES.CACHE.FOLDER 		= $CacheFolder + '\' + $SubFolder
-		$VALUES.CACHE.BASE_FODLER 	= $CacheFolder
-		$VALUES.CACHE.ENABLED  		= $true;
 		
-		#IF folder doenst not exits, creates a new one!
-		if(![IO.Directory]::Exists($VALUES.CACHE.FOLDER )){
-			$NewCacheFolder = mkdir $VALUES.CACHE.FOLDER -force;
-		}
-		
-		#If db doents exists, create a new one!
-		$DbFileName = $VALUES.CACHE.FOLDER + '\' + 'mapping.xml';
-		$VALUES.CACHE.DB_FILE = $DBFileName;
-		
-		Log " 	Base folder: $($VALUES.CACHE.BASE_FODLER). Current Host folder: $($VALUES.CACHE.FOLDER)"
+		$CacheManager.cachedirectory = $CacheFolder + '\' + $SubFolder;
+		Log "	The cache manager directory is $($CacheManager.cachedirectory)."
+		Log "	Initializing cache manager!"
+		$CacheManager.init();
+	} else {
+		Log "No cache directory! Cache of remote files is disabled!";
+		$CacheManager.enabled = $false;
 	}
 	
+	#Register a service for customscript!
+	RegisterService getFileFromCache {
+			param($RemoteName)
+			
+			return $CacheManager.getFile($RemoteName);
+		}
+		
 	
 #Lets interpret zabbix server info
 	
@@ -227,159 +254,7 @@ $ErrorActionPreference = "stop";
 #This is all functions responsible for getting keys and determing which is sql source or powershell source...
 	
 	
-	#Functions to manage local cache!
-		Function UpdateLocalCacheFile {
-		
-			Log "Updating local cache file!!!!" "VERBOSE"
-			
-			try {
-				$VALUES.CACHE.DB | Export-CliXML $VALUES.CACHE.DB_FILE
-			} catch {
-				throw 'UPDATE_LOCAL_CACHE_FILE_ERROR: $_';
-			}
-			
-		}
-		
-		Function LoadLocalCacheFile {
-			try {
-				if(!$VALUES.CACHE.LOADED){
-					if([IO.File]::Exists($VALUES.CACHE.DB_FILE)){
-						Log "Loading cache database from $($VALUES.CACHE.DB_FILE)" "VERBOSE"
-						$VALUES.CACHE.DB = Import-CliXML $VALUES.CACHE.DB_FILE
-						$VALUES.CACHE.LOADED=$true;
-					}
-				}
-			} catch {
-				throw "LOAD_LOCAL_CACHE_FILE_ERROR: $_";
-			}
-			
-		}
-	
-		Function SetupLocalCache {
-	
-			if($VALUES.CACHE.READY){
-				return;
-			}
-	
-			Log "Setting up local cache" "VERBOSE"
-	
-			#Loads database from file!
-			LoadLocalCacheFile
-			
-			$LocalCacheDB = $VALUES.CACHE.DB;
 
-			#Maps network file to a local file!
-			if(!$LocalCacheDB.Contains("FILE_MAP")){
-				$LocalCacheDB.add("FILE_MAP",@{});
-			}
-			
-			$VALUES.CACHE.READY = $true;
-		}
-	
-		Function GetNewFileCacheName {
-			param($RemoteName)
-			
-			[string]$NewFileGuid =  ([Guid]::NewGuid()).Guid.replace('-','');
-			$FileExt = [Io.Path]::GetExtension($RemoteName);
-			$BaseName = [Io.Path]::GetFileNameWithoutExtension($RemoteName);
-			$FileName = $BaseName +'.'+$NewFileGuid.replace("-","") + $FileExt;
-			return $Filename;
-		}
-	
-		Function GetFileCachePath {
-			param($FileName)
-			
-				$FileExt =  [Io.Path]::GetExtension($FileName);
-				$BaseFileTypeDir =  $VALUES.CACHE.FOLDER +'\'+ $FileExt.replace('.','');
-				
-				if(![Io.Directory]::Exists($BaseFileTypeDir)){
-					$NewBaseDirr = mkdir $BaseFileTypeDir -force;
-				}
-				
-				$FullLocalPath = $BaseFileTypeDir +'\'+ $FileName;
-				return $FullLocalPath;
-		}
-	
-		Function GetFileFromCache {
-			param([string]$RemoteName)
-			
-			#If cache is enabled and file is a remote...
-			if($VALUES.CACHE.ENABLED){
-				$FileURI = New-Object Uri($RemoteName);
-				if(!$FileURI.IsUnc){
-					return $RemoteName;
-				}
-			} else {
-				return $RemoteName;
-			}
-			
-			SetupLocalCache;
-			
-			$FileMap = $VALUES.CACHE.DB.FILE_MAP;
-			$CacheFilePath = $null;
-			
-			#Search file name in mapping...
-			if($FileMap.Contains($RemoteName)){
-				#Check if file needs be updated!
-				$CacheEntry = $FileMap[$RemoteName];
-				$FullLocalPath = GetFileCachePath  $CacheEntry.FileName 
-
-				Log "Remote $RemoteName cached: $($FullLocalPath) lastDownloadTime: $($CacheEntry.LastDownloadTime)" "VERBOSE"
-				
-				if(![Io.File]::Exists($FullLocalPath)){
-					try {
-						Log "CacheManager: The local path $FullLocalPath (original: $( $RemoteName)) was not found. Trying re-copy!" "DETAILED";
-						copy -Path $RemoteName -Destination $FullLocalPath -force;
-						$CacheEntry.LastDownloadTime = (Get-Date);
-						UpdateLocalCacheFile;
-						Log "Sucess!" "DETAILED"
-					} catch {
-						Log "	Cannot recopy! Error: $_" "DETAILED";
-						return $null;
-					}
-				}
-				
-				try {
-					$RemoteFile = Get-Item $RemoteName;
-					
-					Log "Remote last modification time: $($RemoteFile.LastWriteTime)" "VERBOSE"
-					
-					if($RemoteFile.LastWriteTime -ge $CacheEntry.LastDownloadTime){
-						Log "Updating local copy!" "VERBOSE"
-						copy -Path $RemoteName -Destination $FullLocalPath -force;
-						$CacheEntry.LastDownloadTime = (Get-Date);
-						UpdateLocalCacheFile
-					}
-				} catch {
-					Log "	Cannot make update check process on remote file $RemoteName. Error: $_" "DETAILED"
-				}
-
-				$CacheFilePath = $FullLocalPath
-			} else {
-				#Generate a new file name!
-				$NewFileName = GetNewFileCacheName $RemoteName;
-				$FullLocalPath = GetFileCachePath $NewFileName 
-				
-				Log "Remote $RemoteName not cached: creating a new on $FullLocalPath" "VERBOSE"
-				
-				#Copy remote file to filename!
-				try {
-					copy -Path $RemoteName -Destination $FullLocalPath -force;
-					$FileMap.add($RemoteName,@{FileName=$NewFileName; LastDownloadTime=(Get-Date)});
-					UpdateLocalCacheFile
-				} catch {
-					Log "	Cannot cache $RemoteName into $FileName. Error: $_" "DETAILED"
-					return $null;
-				}
-
-				$CacheFilePath = $FullLocalPath
-			}
-			
-			Log "Remote file $($RemoteName) will be $FullLocalPath" "VERBOSE"
-			return $CacheFilePath;
-		}
-		
-	
 	#This function just expand keys definitions.
 	#For example, if user pass a file, this function will execute the file in order to get hashtable with the keys!
 	Function UpdateKeysForGet {
@@ -390,7 +265,7 @@ $ErrorActionPreference = "stop";
 		foreach($KeyDef in $KeysDefinitions){
 			
 			if($KeyDef -is [string]){
-				$KeyDef = GetFileFromCache $KeyDef;
+				$KeyDef = $CacheManager.getFile($KeyDef);
 
 				if(![System.IO.File]::Exists($KeyDef)){
 					throw "INVALID_KEY_DEFINITIONS: FileNotExists $KeyDef";
@@ -471,7 +346,7 @@ $ErrorActionPreference = "stop";
 					
 					
 					if([System.IO.File]::Exists($KeySource.SOURCE)){
-						$KeySource.SOURCE = GetFileFromCache $KeySource.SOURCE;
+						$KeySource.SOURCE = $CacheManager.getFile($KeySource.SOURCE);
 						$KeySource.add("QUERY",((Get-Content $KeySource.SOURCE) -join "`r`n")); #Pre caches query in order to save time to read from disk each time.
 					} else {	
 						Log "Key $KeyName will ignored because specified file dont was found: $($KeySource.SOURCE)" $Logging
@@ -938,6 +813,25 @@ Log "Script finished sucessfully. Adjust log level for more messages."
 					The folloing keys are created by default:
 						INSTANCE_NAME = Contains the instance name for which the script will connect to execute SQL scripts.
 						CUSTOM = Contains data passed on parameter $UserCustomData
+						
+				SERVICES
+					Contains a serie of routines that user can use to make something else provided by cmdlet.
+					This is a hashtable where each key a scriptblock providing some action.
+					The keys are documented here.
+					
+						getFileFromCache
+							Returns a cached file. User can use this to bring custom files to local cache.
+							Parameters:
+								$RemoteName
+									Is the name of file to be cached.
+									If file is not a unc file, the script will return this same value.
+									
+							Return:
+								Return the path to file in local cache if is file can be cached.
+								If not, return the same parameter $RemoteName.
+								
+					The users script must allays test if routine has somehting.
+					The service key always must exists, but, if it $null, then, it not avaiable and user cannot call them.
 		
 	.EXAMPLE
 	

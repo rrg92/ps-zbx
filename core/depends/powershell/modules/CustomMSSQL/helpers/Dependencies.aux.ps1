@@ -65,3 +65,22 @@ Function LoadSMO {
 	#>
 
 }
+
+Function ImportDependencieModule {
+	param($ModuleName,[hashtable]$ExtraArgs = @{})
+
+	$g = GetGMV;
+	$modulesDir = $g.MODULESDIR
+	
+	
+	@($ModuleName) | %{
+		$FullPathToModule = $modulesDir + "\" + $_;
+		
+		$Params = @{
+			Name = $FullPathToModule
+		} + $ExtraArgs;
+		
+		write-verbose "ImportDependencieModule: Importing... $($Params.Name)";
+		import-module @Params;
+	}
+}

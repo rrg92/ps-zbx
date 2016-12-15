@@ -24,20 +24,35 @@ Function GetDefaultConfig(){
 
 
 #Retorna o caminho para o arquivo de configuração do agente, definido pelo usuário.
-Function GetUserConfigFile(){
+Function GetUserConfigFile{
+
 	$ConfigDir 	= GetConfigDir
 	$AgentName	= GetAgentBaseName
-	return $ConfigDir +"\agents\"+ $AgentName + ".config.ps1";
+	$ConfigFile = $ConfigDir +"\agents\"+ $AgentName + ".config.ps1";
+		
+	return $ConfigFile;
 }
 
 
 #Obtém um arquivo de log do agente!
-Function GetAgentLogFile($LogFileName){
-	return (GetLogDir) + "\psagents\" + $LogFileName
+Function GetAgentLogFile($LogFileName, [switch]$Default = $false, $BaseDir = $null){
+
+	if($Default){
+		if($BaseDir){
+			$LogFile = $BaseDir + '\log\psagents\' + $LogFileName;
+		} else {
+			throw 'DEFAULT_LOG_FILE_ERROR: BASE_DIR_DONT_VALID'
+		}
+	} else {
+		$LogFile = (GetLogDir) + "\psagents\" + $LogFileName
+	}
+	
+
+	return  $LogFile  
 }
 
 
 #Importa os módulos necessários para o agente
 Function ImportAgentPsModules(){
-	ImportPowershellModules "XLogging","CustomMSSQL"
+	ImportPowershellModules "XLogging","CustomMSSQL","CacheManager"
 }

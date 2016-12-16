@@ -1,5 +1,5 @@
 # ps-zbx
-Fornece uma soluço de integração do SQL Server com o Zabbix.
+Fornece uma solução de integração do SQL Server com o Zabbix.
 
 #Visão Geral
 PS-ZBX é uma soluço para integrar o SQL Server com o Zabbix através da execuço de scripts SQL e powershell definidos pelo usuário. Ele funciona como uma espécie de agente, executando scripts e enviando os resultados para o zabbix.

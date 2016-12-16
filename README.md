@@ -39,7 +39,7 @@ C:\Temp\ps-zbx-master\install\install.ps1 C:\temp\SQLServers.txt
 ```
 
 
-#Configuraço básica
+#Configuração básica
 Após a instalação você deve iniciar a execução do agente!
 O agente aceita um arquivo de configuração. PAra detalhes das opções do arquivo consulte o arquivo em \core\agents\.config.ps1. Este arquivo define todas as configurações possíveis. Não edite ele.
 

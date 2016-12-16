@@ -9,7 +9,7 @@ O agente DEFAULT poderá fazer caches dos seguintes arquivos:
 	- Arquivos de scripts usados nas keys definitions.
 
 Para controle, o agente irá usar o diretório "cache" para efetuar o cache.
-O diretório cache é recriado sempre que um upgrade é feito, portanto, o cache deverá ser repopulado.
+O diretório de cache é mantido entre upgrades.
 
 COMO O CACHE FUNCIONA
 

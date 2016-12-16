@@ -2,6 +2,7 @@
 param(
 	$DiscoveredSQL
 	,$SQLCreds = $null
+	,$ConfigurationFile = $null
 )
 
 $ErrorActionPreference = "stop";
@@ -46,7 +47,6 @@ Function CreateSQLJobs {
 	}
 	
 	$LogFile 	= $LogDir + '\CreateSQLJob_'  + ($SQLInstance.replace('\','$')) + '.log'
-	$LogScript 	= $LogDir + '\CreateSQLJob_'  + ($SQLInstance.replace('\','$')) + '.script.sql'
 	
 	if($Creds){
 		$SQLAuth.Login = $Creds.GetNetworkCredentials().UserName
@@ -55,29 +55,51 @@ Function CreateSQLJobs {
 		write-host "Usando as credenciais diferentes: $($SQLAuth.Login)" >> $LogFile 
 	}
 	
-
-	$SQLJobDefault = Get-Content (GetInstallMSSQLScript 'jobs\JOBZabbixDefault.sql');
-	$Vars = @{
-		JobName 	= 'DBA: MON DEFAULT' 
-		BaseDir		= $BaseDir
-		AgentName	= 'DEFAULT.ps1'
-		KeysGroup	= 'DEFAULT'
+	$JobsToCreate = @{
+		DEFAULT = @{
+			JobName 	= 'DBA: MON ZABBIX DEFAULT' 
+			BaseDir		= $BaseDir
+			AgentName	= 'DEFAULT.ps1'
+			KeysGroup	= 'DEFAULT'
+			PoolingTime = 60000
+			ConfigurationFile = $ConfigurationFile
+		}
+			
+		DISCOVERY = @{
+			JobName 	= 'DBA: MON ZABBIX DISCOVERY' 
+			BaseDir		= $BaseDir
+			AgentName	= 'DEFAULT.ps1'
+			KeysGroup	= 'DISCOVERY'
+			PoolingTime = 0
+			JobFreqMin	= 15
+			ConfigurationFile = $ConfigurationFile
+		}
 	}
-	$SQLScript = ReplaceSQLPsZbxVar -SQLScript $SQLJobDefault -Vars $Vars;
-	$SQLScript > $LogScript;
 	
+	$JOBTemplate = Get-Content (GetInstallMSSQLScript 'jobs\JOBTemplate.sql');
 	
-	try {
-		write-host "Criando jobs default em $SQLInstance...";
-		$resultados = Invoke-NewQuery -ServerInstance $SQLInstance -Logon $SQLAuth -Query ($SQLScript -Join "`r`n")  -Database 'msdb'
-		$resultados >> $LogFile;
-	} catch {
-		"Falha ao criar o job $($Vars.JobName): Crie manualmente depois!. Error: $SQLError" >> $LogFile;
-
-		$SQLError = FormatSQLErrors $_.Exception;
-		$SQLError >> $LogFile
-		write-host "	Falha! Verifique os logs!"
-	}
+	$JobsToCreate.GetEnumerator() | %{
+		$Name = $_.Key;
+		$Vars = $_.Value;
+		$LogScript = $LogDir + '\CreateSQLJob_'  + ($SQLInstance.replace('\','$')) + ".$Name.script.sql"
+		
+		write-host "Attempting create job: $Name";
+		
+		try {
+			$SQLScript = ReplaceSQLTemplateParameters -SQLScript $JOBTemplate -Vars $Vars -Force;
+			$SQLScript > $LogScript;
+			write-host "Criando job  $Name em $SQLInstance...";
+			$resultados = Invoke-NewQuery -ServerInstance $SQLInstance -Logon $SQLAuth -Query ($SQLScript -Join "`r`n")  -Database 'msdb';
+			$resultados >> $LogFile;
+		} catch {
+			$SQLError = FormatSQLErrors $_.Exception;
+			"Falha ao criar o job $Name : Crie manualmente depois!." >> $LogFile;
+			$SQLError >> $LogFile
+			write-host "	Falha! Verifique os logs!"
+		}
+		
+	}	
+	
 }
 
 $DiscoveredSQL | %{

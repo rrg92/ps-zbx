@@ -1,5 +1,5 @@
 [CmdLetBinding()]
-param($CopyPaths = $null)
+param($CopyPaths = $null, $LogLevel = "DETAILED")
 
 
 #Diretórios que não devem ser copiados (contém dados do usuário)
@@ -24,22 +24,63 @@ $BaseDir	 = [System.Io.Path]::GetDirectoryName($CurrentDir);
 		$LoadLib = $LibsDir + '\LoadLibs.ps1';
 		. $LoadLib $BaseDir 
 	} catch {
-		throw "LIBS_LOAD_FAILED: $_"
+		$ex = New-Object Exception("LIB_LOAD_FAILED", $_.Exception)
+		throw $ex;
 	}
 	$DebugMode = $OriginalDebugMode;
 	
+#Dependencies...
+	ImportPowershellModules 'XLogging';
 	
+#Configurando log...
+	$Log = New-LogObject
+	$Log.LogTo = @("#",$null)
+	$Log.LogLevel = $LogLevel; 
+	$Log.UseDLD = $false
+
+	SetPsZbxVar 'INSTALL_LOG_OBJECT' $Log;
+	
+$Log | Invoke-Log "Processo de install iniciado!" "PROGRESS"
+	
+$InstallLogDir 	= GetInstallLogDir
+$PathLog		= GetLogFileName -Prefix "PATHS" -Dir $InstallLogDir;
+
+
+$Log | Invoke-Log "Diretorio de log: $InstallLogDir. Path id mapping: $PathLog" "PROGRESS"
+
+
+if([IO.File]::Exists($CopyPaths)){
+	$CopyPaths = Get-Content $CopyPaths;
+}
+	
+$PathID = 0;
 $CopyPaths | %{
-	#Verifica se no diretorio de destino existe uma estrutura com o diretorio core!
-	$CorePath = $_ + '\core'
+	$PathID++;
+	$CurrentPath = $_;
+	"$PathID --> $_" >> $PathLog;
 	
-	if([System.IO.Directory]::Exists($CorePath)){
-		write-host "Realizando upgrade..."
-		Upgrade -DestBaseDir $_ -SourceBaseDir $BaseDir
-	} else {
-		write-host "Instalando novo..."
-		InstallSolution -DestinationBase $_ -SourceBaseDir $BaseDir
+	$InstallLogFile = GetLogFileName -Prefix "InstallPath_$PathID" -Dir $InstallLogDir;
+	$Log.LogTo[1] = $InstallLogFile;
+	
+	$Log | Invoke-Log "Installing on $_" "PROGRESS"
+
+	try {
+		#Verifica se no diretorio de destino existe uma estrutura com o diretorio core!
+		$CorePath = $_ + '\core'
+		
+		if([System.IO.Directory]::Exists($CorePath)){
+			$Log | Invoke-Log "Realizando upgrade..." "PROGRESS"
+			Upgrade -DestBaseDir $_ -SourceBaseDir $BaseDir
+		} else {
+			$Log | Invoke-Log "instalando novo..." "PROGRESS"
+			InstallSolution -DestinationBase $_ -SourceBaseDir $BaseDir
+		}
+	} catch {
+		$Log | Invoke-Log "Error installing on $CurrentPath" "PROGRESS"
+		$Log | Invoke-Log "$_" "PROGRESS"
 	}
+	
+
 
 }
 

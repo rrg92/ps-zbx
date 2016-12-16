@@ -42,7 +42,7 @@ $SQLInstances = @{}
 #Obtém os serviços que podem ser de instância SQL!
 $SQLServices = @(Get-Service 'mssql$*' -EA "SilentlyContinue") + @(Get-Service "mssqlserver" -EA "SilentlyContinue");
 
-$SQLServices | ?{$_.State -eq "Running" -or !$RunningOnly} | %{
+$SQLServices | ?{$_.Status -eq "Running" -or !$RunningOnly} | %{
 
 	$Service =  $_.Name;
 	

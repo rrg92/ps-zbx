@@ -17,9 +17,10 @@ Function PrepareServerInstanceString($ServerInstance){
 }
 
 
-#Substitui variáveis do powershell em um script sql
-Function ReplaceSQLPsZbxVar {
-	param($SQLScript, [hashtable]$Vars)
+#Substitui variáveis no fomrato de template parameters em scripts sql.
+#O parâmetro $Force faz com que um erro retornado caso não seja encontrado uma variável para um template parameter sem um defaut.
+Function ReplaceSQLTemplateParameters {
+	param($SQLScript, [hashtable]$Vars, [switch]$Force = $false)
 
 	if($SQLScript -isnot [string[]]){
 		$SQLScript = $SQLScript -split '`r`n';
@@ -28,24 +29,42 @@ Function ReplaceSQLPsZbxVar {
 	$NewScript = @();
 	
 	$_DebugMatacheds = @()
-	$VarRegex = [regex]'(?i)\$PSZBX_([a-z0-9]+)';
+	$VarRegex = [regex]'(?i)<([a-z-9]+),,([^>]*)>';
+	
+
 	$MatchEval = {
 		param($M)
-		$VarName = $M.Groups[1].Value;
+		$VarName 		= $M.Groups[1].Value;
+		$DefaultValue 	= $M.Groups[2].Value;
+		
+		if(!$Vars){
+			$Vars = @{};
+		}
+		
 		
 		if($Vars.Contains($VarName)){
 			$VarValue = $Vars[$VarName];
 			
-			if($VarValue.count -ge 1){
-				return ($VarValue -join ",")
-			} else {
-				return [string]$VarValue;
+			if($VarValue -ne $null){
+				if($VarValue.count -ge 1){
+					return ($VarValue -join ",")
+				} else {
+					return [string]$VarValue;
+				}
 			}
+
+			#If execution arrives here, means the variable is null...
+		}
 		
-			
+		if($DefaultValue){
+			return $DefaultValue
 		} else {
+			if($Force){
+				throw "NOT_FOUND_VALUE_FOR: $VarName"
+			}
 			return $M.Value;
 		}
+		
 	}
 	
 	$SQLScript | %{

@@ -76,6 +76,7 @@ try {
 		$Log.UseDLD = $false
 		
 		$Log | Invoke-Log "PSZBX started. Agent $CurrentFileBase. Keysgroup: $KeysGroup"
+		$Log | Invoke-Log "Agent is logging messages to $LogFileName"
 		
 		#Configurando o cache manager!
 		$AgentCache = New-CacheManager;

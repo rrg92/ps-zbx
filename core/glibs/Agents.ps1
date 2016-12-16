@@ -33,13 +33,29 @@ Function GetUserConfigFile{
 	return $ConfigFile;
 }
 
+#obtém o caminho para o log do agente!
+Function GetAgentDefaultLogDir {
+	($BaseDir = $null)
+	
+	if(!$BaseDir){
+		$BaseDir = (GetBaseDir)
+	}
+	
+	$LogDir = $BaseDir + '\log\psagents';
+	
+	if(![IO.Directory]::Exists($LogDir)){
+		$Dir = New-Item -ItemType Directory -Path $LogDir -force;
+	}
+	
+	return $LogDir;
+}
 
 #Obtém um arquivo de log do agente!
 Function GetAgentLogFile($LogFileName, [switch]$Default = $false, $BaseDir = $null){
 
 	if($Default){
 		if($BaseDir){
-			$LogFile = $BaseDir + '\log\psagents\' + $LogFileName;
+			$LogFile = (GetAgentDefaultLogDir $BaseDir) +'\'+ $LogFileName;
 		} else {
 			throw 'DEFAULT_LOG_FILE_ERROR: BASE_DIR_DONT_VALID'
 		}

@@ -2,10 +2,10 @@
 Fornece uma solução de integração do SQL Server com o Zabbix.
 
 #Visão Geral
-PS-ZBX é uma soluço para integrar o SQL Server com o Zabbix através da execuço de scripts SQL e powershell definidos pelo usuário. Ele funciona como uma espécie de agente, executando scripts e enviando os resultados para o zabbix.
-Através de um arquivo de configuração é possível especificar os scripts e as chaves do Zabbix que irão ser populados com o resultados do mesmo.
+PS-ZBX é uma solução para integrar o SQL Server com o Zabbix através da execução de scripts SQL e powershell definidos pelo usuário. Ele funciona como uma espécie de agente, executando scripts e enviando os resultados para o zabbix.
+Através de um arquivo de configuração é possível especificar os scripts e as chaves do Zabbix que irão ser populados com os resultados do mesmo.
 A solução cuida de executar os scrips nas instãncias desejadas e entregar ao zabbix.
-Tudo pode ser configurado através de parâmetros e arquivos de configuraço.
+Tudo pode ser configurado através de parâmetros e arquivos de configuração.
 
 
 # Como instalar 
@@ -40,8 +40,8 @@ C:\Temp\ps-zbx-master\install\install.ps1 C:\temp\SQLServers.txt
 
 
 #Configuraço básica
-Após a instalaço você deve iniciar a execuço do agente!
-O agente aceita um arquivo de configuração. PAra detalhes das opções do arquivo consulte o arquivo em \core\agents\.config.ps1. Este arquivo define todas as configuraçes possíveis. Não edite ele.
+Após a instalação você deve iniciar a execução do agente!
+O agente aceita um arquivo de configuração. PAra detalhes das opções do arquivo consulte o arquivo em \core\agents\.config.ps1. Este arquivo define todas as configurações possíveis. Não edite ele.
 
 Você pode editar o arquivo de configuração \config\agents\default.config.ps1.
 Sempre que houver upgrades, este arquivo será mantigo.

@@ -1,3 +1,5 @@
+#Sobre os Caches
+
 O diretório "cache" na raiz, é um diretório que será usado pelo agente para salvar arquivos de redes.
 Isso permite que o agente se mantenha funcionando quando o arquivo da rede estiver indisponível.
 
@@ -11,7 +13,7 @@ O agente DEFAULT poderá fazer caches dos seguintes arquivos:
 Para controle, o agente irá usar o diretório "cache" para efetuar o cache.
 O diretório de cache é mantido entre upgrades.
 
-COMO O CACHE FUNCIONA
+# Como o Cache funciona
 
 	Ao iniciar, o agente irá verificar se algum dos arquivos acima são de rede analisando o caminho de cada um.
 	Os arquivos que forem de rede, serão colocados no diretório cache.
@@ -43,7 +45,7 @@ COMO O CACHE FUNCIONA
 
 
 
-ESTRUTURAS DO CACHE
+# Estrutura do Cache
 
 	Os caches, independemente de qual seja, possuem a mesma estrutura porque usam o mesmo serviço de cache manager.
 	Em cada cache há um arquivo chamado mapping.xml. Este arquivo é o banco de dados do cache e é usado pelo mesmo para guardar diversas informações a respeito do mesmo, inclusive os mapeamentos dos arquivos remotos para os arquivos locais.

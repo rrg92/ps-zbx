@@ -210,3 +210,21 @@ Function GetUpgradeBackupDir {
 
 	return $BackupDir;
 }
+
+#Obtem o caminho para um diretorio de backup do agente replicateconfig.
+Function GetReplicateConfigBackupDir {
+	param($BaseDir)
+	
+	if(!$BaseDir){
+		throw 'INVALID_BASE_DIR. You must specify a base dir. Base dir is where all is installed!'
+	}
+	
+	$ts = (Get-Date).toString("yyyyMMdd_HHmmss");
+	$BackupDir = $BaseDir + "\install\replicateConfig\backups\$ts"
+	
+	if(![System.IO.Directory]::Exists($BackupDir)){
+		$CreatedDir = mkdir $BackupDir -force;
+	}
+
+	return $BackupDir;
+}

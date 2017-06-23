@@ -224,3 +224,22 @@ Function Object2HashString {
 
 	return ($ALLObjects -join "`r`n");
 }
+
+
+#Transforms a local path to a network admin share letter$ for a server!
+#If path is
+Function Local2RemoteAdmin {
+	param($Path, $RemoteAddress = $Env:ComputerName)
+
+	$URI = New-Object URI($Path);
+
+	if(!$URI.IsUnc){
+		if($Path -match '^[a-z]:\\'){
+			return $Path -replace '^([a-z]):\\',"\\$RemoteAddress\`$1`$\"
+		} else {
+			return $Path;
+		}
+	} else {
+		return $Path;
+	}
+}

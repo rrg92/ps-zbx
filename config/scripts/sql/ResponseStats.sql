@@ -99,6 +99,7 @@ FROM
 							ELSE 0
 						END  isForcedWait
 						,CASE
+							WHEN R.wait_type like 'BROKER%' THEN 0
 							WHEN R.command IN ('SELECT','INSERT','UPDATE','DELETE','EXECUTE') THEN 1
 							ELSE 0
 						END as IsDML

@@ -238,6 +238,8 @@ try {
 			if( [System.IO.File]::Exists($LogFileName) ){
 				Out-File -InputObject "ERROR:" -FilePath $LogFileName -Append
 				Out-File -InputObject $_ -FilePath $LogFileName -Append
+			} else {
+				throw "CANNOT CREATE_LOG_FILENAME: $LogFileName";
 			}
 
 		} catch {

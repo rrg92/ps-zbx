@@ -35,7 +35,7 @@ Function GetUserConfigFile{
 
 #obtém o caminho para o log do agente!
 Function GetAgentDefaultLogDir {
-	($BaseDir = $null)
+	param($BaseDir = $null)
 	
 	if(!$BaseDir){
 		$BaseDir = (GetBaseDir)
@@ -55,7 +55,7 @@ Function GetAgentLogFile($LogFileName, [switch]$Default = $false, $BaseDir = $nu
 
 	if($Default){
 		if($BaseDir){
-			$LogFile = (GetAgentDefaultLogDir $BaseDir) +'\'+ $LogFileName;
+			$LogFile = (GetAgentDefaultLogDir $BaseDir)+'\'+$LogFileName;
 		} else {
 			throw 'DEFAULT_LOG_FILE_ERROR: BASE_DIR_DONT_VALID'
 		}

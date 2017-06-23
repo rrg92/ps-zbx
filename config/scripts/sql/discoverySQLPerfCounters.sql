@@ -83,7 +83,7 @@ WHERE
 
 
 --> Se for a conta do Zabbix que estiver executando o script, então retorna somente o nome do contadore e encerra!
-IF SUSER_NAME() LIKE '%ZabbixService%'
+IF PROGRAM_NAME() LIKE '%SQL2ZABBIX%'
 BEGIN
 	SELECT ObjectNameOnly,CounterName,CounterInstance,CounterPath FROM #Counters;
 	RETURN;

@@ -1,5 +1,21 @@
 [CmdLetBinding()]
-param($CopyPaths = $null, $LogLevel = "DETAILED")
+param(
+	#Specify the copy paths. For example,  \\server1\c$\zabbix\pszbx
+	#You can use the ZabbixServers and installPath to get more control over.
+		$CopyPaths = $null
+
+	,#Array of servers to copy. It will be copied via a admin share, based on InstallPath.
+	#For example, if servers is SERVER1, SERVER2 and InstallPath is C:\Zabbix\pszbx, then it will copy to
+	#\\SERVER1\c$\zabbix\pszbx and \\SERVER2\c$\zabbix\pszbx
+		$ServerNames = $null
+	
+	,#Specify the install path on the server to be used in conjunction the server names provided.
+	 #It will be translated to a admin share.
+		$InstallPath = 'C:\zabbix\pszbx'
+	
+	,#The log level of progress of install...
+		$LogLevel = "DETAILED"
+)
 
 
 #Diretórios que não devem ser copiados (contém dados do usuário)
@@ -48,9 +64,26 @@ $PathLog		= GetLogFileName -Prefix "PATHS" -Dir $InstallLogDir;
 
 $Log | Invoke-Log "Diretorio de log: $InstallLogDir. Path id mapping: $PathLog" "PROGRESS"
 
+if($CopyPaths){
+	if([IO.File]::Exists($CopyPaths)){
+		$CopyPaths = Get-Content $CopyPaths;
+	}
+} else {
+	
+	if($ServerNames){
+		#Check if a valid install path was provided!
+		if(!$InstallPath){
+			throw "EMPTY_INSTALL_PATH";
+		}
+		
+		#Build the copy paths!
+		$CopyPaths = $ServerNames | %{  Local2RemoteAdmin -Path $InstallPath -RemoteAddress $_   }
+	}
+	
+}
 
-if([IO.File]::Exists($CopyPaths)){
-	$CopyPaths = Get-Content $CopyPaths;
+if(!$CopyPaths){
+	throw 'NO_COPY_PATH'
 }
 	
 $PathID = 0;

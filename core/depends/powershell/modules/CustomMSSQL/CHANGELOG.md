@@ -2,6 +2,11 @@
 All important changes to this project will be added to this file!
 This changelog will be based on [Keep a change log](http://keepachangelog.com/)
 
+
+## [0.6.10] - 2017-06-23
+### Changed
+- (Send-SQL2Zabbix) Add new Storage Area feature!
+
 ## [0.6.9] - 2016-12-15
 ### Added
 - (Send-SQL2Zabbix) Services feature! Check cmdlet documentation for more details!
@@ -73,6 +78,7 @@ This changelog will be based on [Keep a change log](http://keepachangelog.com/)
 ### Changed
 - The module psd1 file was updated to correct version!
 
+ 0.6.10]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.10
 [0.6.9]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.9
 [0.6.8]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.8
 [0.6.7]: https://github.com/rrg92/CustomMSSQL/releases/tag/0.6.7

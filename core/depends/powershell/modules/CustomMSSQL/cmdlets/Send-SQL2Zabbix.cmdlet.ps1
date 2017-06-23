@@ -63,6 +63,10 @@ Function Send-SQL2Zabbix {
 		,#Enables script to no execute zabbixer sender tool. It just dump results...
 		 #Used for debug purposes only.
 			[switch]$NoSenderMode = $false
+			
+		,#Storare area. This is folder where the scirpt will implements storage area.
+		 #The storage area is a place where will persit values used with STORAGE AREA SERVICE.
+			$StorageArea = $null
 	)
 
 $ErrorActionPreference = "stop";
@@ -100,6 +104,7 @@ $ErrorActionPreference = "stop";
 		#This parts will contains many routines allowing users use many services provided by cmdlet!
 		$SERVICES_NAMES	= @(
 				"getFileFromCache"
+				"getStorageArea"
 			)
 
 		#Register a service!
@@ -234,8 +239,86 @@ $ErrorActionPreference = "stop";
 			
 			return $CacheManager.getFile($RemoteName);
 		}
-		
 	
+#Storage area hanlding!
+	
+	if($StorageArea){
+		Log "A storage area will be used! Path: $StorageArea"
+		
+		#Check if path to storage area exists. create it!
+		
+		if(![IO.Directory]::Exists($StorageArea)){
+			Log "	Creating the storage area!"
+			$StorageAreaItem = mkdir $StorageArea;
+		}
+	}
+
+	$StorageAreaCache = @{};
+	
+	#Register a services for storagearea!
+	RegisterService getStorageArea {
+			param($AreaName)
+			
+			if(!$StorageArea){
+				return $null;
+			}
+			
+			try {
+				if($StorageAreaCache.Contains($AreaName)){
+					return $StorageAreaCache[$AreaName];
+				}
+			
+				
+				$O = New-Object PSObject -Prop @{
+						StorageArea = $StorageArea
+						AreaName = $AreaName
+						AreaPath = $null
+					}
+					
+				$NewArea = $StorageArea +'\'+$AreaName;
+				if(![IO.Directory]::Exists($NewArea)){
+					$NewAreaSlot = mkdir $NewArea;
+				}
+				$O.AreaPath = $NewArea;
+				
+					
+				$O | Add-Member -Type ScriptMethod -Name write -Value {
+						param($TableName, $Table)
+						
+						try {
+							$PathToWrite = $this.AreaPath +'\'+$TableName+'.xml';
+							$Table | Export-CliXMl $PathToWrite;
+						} catch {
+							throw "STORAGEAREA_WRITEERROR: Path: $PathToWrite. Error: $_"
+						}
+					}
+					
+				$O | Add-Member -Type ScriptMethod -Name read -Value {
+						param($TableName)
+						
+						try {
+							$PathToRead = $this.AreaPath +'\'+$TableName+'.xml';
+							
+							if([IO.File]::Exists($PathToRead) ){
+								return Import-CliXMl $PathToRead;
+							} else {
+								return $null;
+							}
+							
+							
+						} catch {
+							throw "STORAGEAREA_READERROR: Path: $PathToRead. Error: $_"
+						}
+					}
+					
+				$StorageAreaCache[$AreaName] = $O;
+				return $O;
+			} catch {
+				throw "STORAGEAREA_NEWAREA_FAILED: StorageArea:$StorageArea, Area:$NewArea. Error: $_";
+			}
+		}
+	
+		
 #Lets interpret zabbix server info
 	
 	Log "Evaluating zabbix server and port"

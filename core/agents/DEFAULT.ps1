@@ -212,6 +212,7 @@ try {
 							}
 			CacheFolder		= ($CONFIG.CACHE_DIR+'\send2zabbix')
 			ExecutionID		= $Send2ZabbixExecId
+			StorageArea		= $CONFIG.STORAGEAREA_DIR
 		}
 		
 		if($CONFIG.SQL_APP_NAME){
@@ -224,7 +225,7 @@ try {
 
 	#Chamando o cmdlet Send-SQL2Zabbix. Este cmdlet está definido no módulo CustomMSSQL.
 	#Ele contém toda a lógica necessária para executar os scripts definidos na keys e enviar para o zabbix.
-	#As atualizações podem ser baixadas do site scriptstore.thesqltimes.com/docs/custommssql
+	#As atualizações podem ser baixadas do site github.com/rrg92/CustomMSSQL
 		Send-SQL2Zabbix @Params
 		$ExitCode = 0; #Marca como exit sucesso!
 } catch {

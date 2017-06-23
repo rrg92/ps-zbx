@@ -86,6 +86,12 @@ return @{
 	
 	#Diretóriio de cache!
 	CACHE_DIR = '\cache'
+	
+	#The storage area!
+	#This will define a place where keys defintions that are ps scripts, can use to persist values between executins.
+	#The storage areas is a feature of Send-SQL2Zabbix
+	#Check README.md in stor at rooot dir for more information.
+	STORAGEAREA_DIR = '\storarea'
 }
 
 

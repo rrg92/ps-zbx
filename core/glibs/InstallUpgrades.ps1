@@ -1,5 +1,5 @@
 #Contém funções referentes ao processo de instalação e upgrade da solução!
-
+$PSZBX_NONUPGRADEABLE_DIRECTORIES = @('config','log','upgrade','cache','stor')
 
 #Atualiza de uma versao para outra!
 Function Upgrade {
@@ -47,7 +47,7 @@ Function Upgrade {
 			$Log | Invoke-Log "Current dir is: $($CurrentDir.FullName)" "DETAILED"
 			
 			#Se for algum dos diretórios abaixo, não os remove pois pode conter dados do usuário
-			if( @('config','log','upgrade','cache') -Contains $CurrentDir.Name){
+			if( $PSZBX_NONUPGRADEABLE_DIRECTORIES -Contains $CurrentDir.Name){
 				return;
 			}
 			
@@ -77,7 +77,7 @@ Function Upgrade {
 
 	
 	$Log | Invoke-Log "Copiando novos items!" "DETAILED"
-	$SourceDirs = gci $SourceBaseDir | ? {$_.PsIscontainer -and @('upgrade','log','config') -NotContains $_.Name}
+	$SourceDirs = gci $SourceBaseDir | ? {$_.PsIscontainer -and $PSZBX_NONUPGRADEABLE_DIRECTORIES -NotContains $_.Name}
 	$StartRollback = $false;
 	try {
 		

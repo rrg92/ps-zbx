@@ -71,13 +71,17 @@ if($CopyPaths){
 } else {
 	
 	if($ServerNames){
+		if([IO.File]::Exists($ServerNames)){
+			$ServerNames = Get-Content $ServerNames;
+		}
+		
 		#Check if a valid install path was provided!
 		if(!$InstallPath){
 			throw "EMPTY_INSTALL_PATH";
 		}
 		
 		#Build the copy paths!
-		$CopyPaths = $ServerNames | %{  Local2RemoteAdmin -Path $InstallPath -RemoteAddress $_   }
+		$CopyPaths = $ServerNames | %{  Local2RemoteAdmin -Path $InstallPath -RemoteAddress $_  -PreserveLocal  }
 	}
 	
 }

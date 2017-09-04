@@ -225,12 +225,44 @@ Function Object2HashString {
 	return ($ALLObjects -join "`r`n");
 }
 
+#Check if a given address is current computer!
+Function IsLocalComputer {
+	param($Address)
+	
+	$LocalAddresses = @(
+		'.'
+		'127.0.0.1'
+		'localhost'
+		(Get-WMIObject Win32_NetworkAdapterConfiguration | %{$_.IpAddress})
+		$Env:ComputerName
+	)
+	
+	$ComputerSystemInfo = Get-WmiObject Win32_ComputerSystem;
+	
+	if($ComputerSystemInfo.partofdomain){
+		$FullComputerName = $ComputerSystemInfo.Name+'.'+$ComputerSystemInfo.Domain;
+		$LocalAddresses += $ComputerSystemInfo.Name,$FullComputerName
+	}
+	
+	return $LocalAddresses -Contains $Address;
+}
 
 #Transforms a local path to a network admin share letter$ for a server!
 #If path is
 Function Local2RemoteAdmin {
-	param($Path, $RemoteAddress = $Env:ComputerName)
+	param(
+		 $Path
+		
+		,$RemoteAddress = $Env:ComputerName
+	
+		,[switch]$PreserveLocal = $false
+	)
 
+	if($PreserveLocal -and (IsLocalComputer $RemoteAddress) ){
+		return $Path;
+	}
+	
+	
 	$URI = New-Object URI($Path);
 
 	if(!$URI.IsUnc){

@@ -1,8 +1,25 @@
 #Replica o diretorio config para outros diretorios de instalacao do pszbx!
 param(
-	 $Source
-	,$CopyPaths
+	
+	#Source directory where exist a "config" subdirectory.
+	$Source
+	
+	
+	,#Specify the copy paths. For example,  \\server1\c$\zabbix\pszbx
+	#You can use the ZabbixServers and installPath to get more control over.
+		$CopyPaths = $null
+	
+	,#Array of servers to copy. It will be copied via a admin share, based on InstallPath.
+	#For example, if servers is SERVER1, SERVER2 and InstallPath is C:\Zabbix\pszbx, then it will copy to
+	#\\SERVER1\c$\zabbix\pszbx and \\SERVER2\c$\zabbix\pszbx
+		$ServerNames = $null
+	
+	,#Specify the install path on the server to be used in conjunction the server names provided.
+	 #It will be translated to a admin share.
+		$InstallPath = 'C:\zabbix\pszbx'
+		
 	,$LogLevel = "DETAILED"
+	
 	,[switch]$NoValidateSource = $false
 )
 
@@ -44,8 +61,30 @@ $BaseDir	 = [System.Io.Path]::GetDirectoryName($CurrentDir);
 	
 	SetPsZbxVar 'REPLICATE_CONFIG_LOGOBJECT' $Log;
 	
-if([IO.File]::Exists($CopyPaths)){
-	$CopyPaths = Get-Content $CopyPaths;
+if($CopyPaths){
+	if([IO.File]::Exists($CopyPaths)){
+		$CopyPaths = Get-Content $CopyPaths;
+	}
+}  else {
+	
+	if($ServerNames){
+		if([IO.File]::Exists($ServerNames)){
+			$ServerNames = Get-Content $ServerNames;
+		}
+	
+		#Check if a valid install path was provided!
+		if(!$InstallPath){
+			throw "EMPTY_INSTALL_PATH";
+		}
+		
+		#Build the copy paths!
+		$CopyPaths = $ServerNames | %{  Local2RemoteAdmin -Path $InstallPath -RemoteAddress $_  -PreserveLocal  }
+	}
+	
+}
+
+if(!$CopyPaths){
+	throw 'NO_COPY_PATH'
 }
 
 $PathLog	= GetLogFileName -Prefix "PATHS" -Dir $LogDir ;
@@ -83,7 +122,7 @@ $CopyPaths | %{
 				$BackupDir = GetReplicateConfigBackupDir -BaseDir $CurrentPath
 				$Log | Invoke-Log " The destination config will be replaced. Backuping it! Backup dir is: $BackupDir" "PROGRESS"
 				
-				copy "$CurrentPath\config" $BackupDir -force;
+				copy -recurse "$CurrentPath\config" $BackupDir -force;
 			} catch {
 				throw "BACKUP_FAILED: $_";
 			}

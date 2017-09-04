@@ -51,7 +51,7 @@ Após a instalação você deve iniciar a execução do agente!
 O agente aceita um arquivo de configuração. PAra detalhes das opções do arquivo consulte o arquivo em \core\agents\.config.ps1. Este arquivo define todas as configurações possíveis. Não edite ele.
 
 Você pode editar o arquivo de configuração \config\agents\default.config.ps1.
-Sempre que houver upgrades, este arquivo será mantigo.
+Sempre que houver upgrades, este arquivo será mantido.
 
 Você tambm pode definir um arquivo de configuração e colocá-lo em um diretório de rede.
 Ao executar o agente, você pode usar o parâmetro -ConfigurationFile e passar o caminho de rede para o arquivo.

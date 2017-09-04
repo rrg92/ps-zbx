@@ -38,7 +38,7 @@ C:\Temp\ps-zbx-master\install\install.ps1 C:\temp\SQLServers.txt
 
 #O exemplo acima é útil se você necessita copiar em diretórios diferentes!
 #Se você quer instalar no mesmo caminho, pode usar este formato:
-C:\Temp\ps-zbx-master\install\install.ps1 --InstallPath C:\zabbix\pszbx -ServerNames 'SQL1','SQL2','SQL3'
+C:\Temp\ps-zbx-master\install\install.ps1 -InstallPath C:\zabbix\pszbx -ServerNames 'SQL1','SQL2','SQL3'
 
 #Este exemplo irá acessar as unidade C:\ via admin share \\SERVER\C$\pszbx.
 #Note que se em ambos os casos, o acesso via admin share não estiver funcionando, você vai precisar fazer a instalação manual.

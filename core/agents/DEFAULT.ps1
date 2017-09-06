@@ -1,22 +1,73 @@
 param(
 
+	
 	[parameter(Mandatory=$true)]
+	#The SQL Server instance to connect to, when running SQL Scripts	
 		$Instance
 	
 	,[parameter(Mandatory=$true)]
+	#The keysgroup name. the keysgroup must be defined in the configuration file.	
 		$KeysGroup
 		
-	,[switch]$DebugMode = $false
-	,[switch]$ReturnExitCode = $false
-	,$PoolingTime = 0
-	,$ReloadTime = 120
-	,$HostName = $null
-	,[switch]$JustDebugKeys=$false
-	,$KeysGroupFile = $null
-	,$LogFileNameExt = $null
-	,$LogLevel = "DETAILED"
-	,[switch]$DynamicHostName = $false
-	,$ConfigurationFile		  = $null
+	,#Specify if you the agents runs in debug mode.
+	 #In debug mode, some additional keys can be used, and more logging are generated.
+	 #This must be used if you know internals of pszbx and wants debug something.
+		[switch]
+		$DebugMode = $false
+	
+	,#Indicates that agent will return a operating exit code.
+	 #0 is for sucessfully execution. 1 is error
+		[switch]
+		$ReturnExitCode = $false
+		
+	,#The pooling time to be passed to Send-SQL2ZABBIX cmdlet
+	 #You can check more about pooling time in the Send-SQL2Zabbix documentation.
+	 #Basically, this tells to it how much time it will run before re-execute scripts and send results to zabbix again. 0 means, no loops, and ends execution after first loop.
+		$PoolingTime = 0
+		
+	,#This is another parameter to be passed to Send-SQL2Zabbix cmdlet.
+	 #You can check more about pooling time in the Send-SQL2Zabbix documentation.
+	 #Basically, this tells to cmdlet the frequency, in seconds, that it will reload key definitions files.
+		$ReloadTime = 120
+		
+	,#The hostname to be passed to Send-SQL2ZABBIX
+	 #You can check more about pooling time in the Send-SQL2Zabbix documentation.
+	 #Basically, this is the host in the zabbix, for which the collected data will be send.
+		$HostName = $null
+	
+	,#If in debug mode, just use debug keys.
+		[switch]
+		$JustDebugKeys=$false
+		
+	,#Specify keysdef.ps1 files to be added to the keys definitions passed to Send-SQL2ZABBIX.
+	 #If this specified, the KEYSGROUPS respective keys definitions files will be passed and this also.
+		$KeysGroupFile = $null
+		
+	,#Specfy a extension for the logging files. Default is ".log"
+		$LogFileNameExt = $null
+		
+		
+	,#The log level of agent
+		$LogLevel = "DETAILED"
+		
+	,#Specify if agent must derive the HostName parameter from a custom scriptblock in the configuration file.
+	 #The option in configuraton file where your define script block is DYNAMIC_HOSTNAME_SCRIPT
+	 #This script will recevei a parameter containing a hashtable with following properties:
+	 #	
+	 #	Instance = The -Instance parameter
+	 #
+	 #
+	 #
+	 # The script block must return a string. This result will be the value of -HostName parameter.
+		[switch]
+		$DynamicHostName = $false
+		
+	,#Specify a alternative configuration file.
+	 #You can specifyu any valid powershell file.
+	 #The configuration file must return a hashtable. Check the default cofniguration file for all possible options.
+	 #If this parameter is used, then it overrides any other configuration file used.
+	 #This will be cached, if is remote.
+		$ConfigurationFile		  = $null
 )
 
 $ErrorActionPreference = "stop";
@@ -259,3 +310,80 @@ try {
 		exit $ExitCode;
 	}
 }
+
+
+<#
+	.SYNOPSIS 
+		This is the DEFAULT agent of pszbx.
+		
+	.DESCRIPTION
+		The DEFAULT main objective is prepare environment to calls Send-SQL2Zabbix, cmdlet that is part of CustomMSSQL module, responsbile to execute - scripts and map to zabbix keys, and send it to zabbix server.
+		
+		The main work is:
+		
+			- Setup logging
+			- Check and handle parameters and configurations (like resolve directories paths, dynamic hostname, etc.)
+			- Handle erros and correct reporting to calling application
+			- Create the concept of "KEYSGROUP" and get all keus associated with a "KEYSGROUP"
+		
+		
+		The agent define the concepts of "KEYSGROUPS", tht simply are a group of key definitions that will be send to Send-SQL2Zabbix cmdlet.
+		
+		CONFIGURATION
+			The default configuration file of agent is ".config.ps1" located on same folder as the AGENT.
+			You can specify a alternate configuraton file using -ConfigurationFile parameter.
+			You also can place a configuraton file called "default.config.ps1" under /config/agent directory
+		
+		
+		THE RELATION WITH SEND-SQL2ZABBIX
+		
+			The DEFAULT agent itself dont make many useful things in respect to zabbix and scripts to run.
+			The magic is maded by "Send-SQL2Zabbix" of "CustomMSSQL".
+			The work of agent is prepare the environment for the cmdlet runs.
+			
+			The DEFAULT agent presents a configuration with many options to the user and handles all things that Send-SQL2Zabbix will not handle.
+			
+
+		KEYSGROUP
+			
+			Keysgroup are a concept created by DEFAULT agent and dont exists in Send-SQL2Zabbix.
+			The idea is allow a user maps a set os keys definitions to a name, and then, use this name in command line to reference this key.
+			
+			This allow user runs this AGENT with different groups os keuys.
+			For example, you can define a KEYGROUP called "DEFAULT" and assing some keys definitions to it, and then, specify a instance of this agent to run this keygroup each 5 minutes.
+			
+			Then, you can define another keygroup, called "DISCOVERY", assign another group os keys specially for Low Level Discovery, and put it to run every 15 minutes.
+			
+			Note that with same agent, but differrent running instances, you can create interesting model of monitoring of you envinroment.
+			
+		THE AGENT CACHE
+		
+			This agent have a caching mechanism.
+			Some files, can be located in remote shares.
+			When this occurs, the agent will detect it, and stores it locally, in the cache folder.
+			It will use the cached file whenever remote file is unavaliable.
+			Check de description of parameters and configurations to determine which will be cached.
+			
+			The Send-SQL2ZABBIX also provides a caching mechanism. It will caches remote files specified in keys definitions.  This agent will setup de cache folder to it.
+			
+			In summary, this agent will cache this type files
+			
+						
+			- File specified in -ConfigurationFile
+			- Keys definitions files KEYSGROUP
+			- Script files specified in keys definitions
+			
+			The "cache" directory in root, is used to store the cache of the AGENT.
+			To more details and internals about cache, check doc/DEFAULTAGENT_CACHE.md
+						
+		
+	.EXAMPLE
+
+		C:\Zabbix\pszbx\core\agents\DEFAULT.ps1 -Instance "SQL1" -HostName "SQL1" -KeysGroup "MYKEYGROUPNAME"
+		
+		In This example you specify the agent with run connecting on SQL Instance SQL1, the hostname to be used in Zabbix is SQL1 and the keygroups is MYKEYGROUPNAME
+		
+	.NOTES
+		
+
+#>

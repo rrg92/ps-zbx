@@ -11,15 +11,22 @@ Function Test-LogObject {
 			,$RetainedInterval = 1
 			,$RetainedCount = 5
 			,$IdentString = "`t"
+			,[switch]$DebugMode = $false
+			,$CustomTarget = $null
+			,$debugscript = $null
 	)
 	
 	try {
 
 		$o = New-LogObject
 		$o.LogTo = @()
+		$o.debugmode = $DebugMode;
 		$o.BufferIsHost = $BufferIsHost;
 		$o.IgnoreLogFail = $false;
 		$o.IdentString = $IdentString;
+		$o.dyndebugscript = $debugscript
+		$o.UseDLD = $false;
+		$o.setDefaultLogLevel("PROGRESS");
 		
 		if($Screen) {
 			$o.LogTo += "#"
@@ -36,6 +43,11 @@ Function Test-LogObject {
 		if($Path){
 			$o.LogTo += $Path;
 		}
+		
+		if($CustomTarget){
+			$o.LogTo += $CustomTarget
+		}
+		
 		
 		if($BufferIsHost){
 			$o | Invoke-Log "THIS WAS FORCED!" "PROGRESS" -ForceNoBuffer
@@ -71,8 +83,8 @@ Function Test-LogObject {
 		$o | Invoke-Log "6.3 -Drop -Raise -ApplyThis -KeepFlow = no effect. maintain previous" -DropIdent -RaiseIdent -ApplyThis -KeepFlow
 		$o.dropIdent();
 		$o | Invoke-Log "7 No parans, Ident must be droppped because previous method dropIDent."
-		$o | Invoke-Log "8 -Raise = Next must raise." -RaiseIdent
 		$CurrentLevel = $o.getIdentLevel();
+		$o | Invoke-Log "8 -Raise = Next must raise." -RaiseIdent
 		$o | Invoke-Log "8.1 -Raise . this must raise and must raise next." -RaiseIdent
 		$o | Invoke-Log "8.1.1 This must raise because previous -Raise"
 		$o.setIdentLevel($CurrentLevel);
@@ -81,15 +93,27 @@ Function Test-LogObject {
 		
 		
 		$o | Invoke-Log "TESTING IDENTATION WITH RETAIN FLUSH" -IdentLevel 0
-		$o | Invoke-Log "1 (Retained)" 		-Retain -RaiseIdent
+		$o | Invoke-Log "1 (Retained)" 		-Retain -RaiseIdent -DebugID  "IDENTREATAIN_FIRST_RETAINED"
 		$o | Invoke-Log "1.1 (Retained)" 	
 		$o | Invoke-Log "1.2 (Retained)" 	
-		$o | Invoke-Log "2 (Flushed)"		-DropIdent -Flush 	
-		$o | Invoke-Log "3 (Normal)" 	
+		$o | Invoke-Log "2 (Flushed)"		-DropIdent -Flush 	-DebugID  "IDENTREATAIN_FLUSHED"
+		$o | Invoke-Log "3 (Normal)"  -DebugID  "IDENTRETAIN_LAST_NORMAL"
 		
 		
+		$o | Invoke-Log "TESTING DEFAULT LOG LEVEL!" -IdentLevel 0
+		$o | Invoke-Log "This message will have log level of PROGRESS explicity set" "PROGRESS"
 		
+		$o.setDefaultLogLevel("DETAILED")
+		$o | Invoke-Log "This message will have log level of DETAILED getted from default!"
 		
+		$o.setDefaultLogLevel($null);
+		$o.useDLD = $true;
+		$o.DLDScript = {return "VERBOSE"};
+		$currentLevel = $o.LogLevel;
+		$o.LogLevel = "VERBOSE";
+		$o | Invoke-Log "This message will have log level of VERBOSE because of use of DLD script!"
+		$o.LogLevel = $currentLevel;
+		$o.UseDLD = $false;
 		
 		#buffering (retain) test
 		$o | Invoke-Log "Retained Start!!!" "PROGRESS" -Retain 

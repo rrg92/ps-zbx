@@ -1,4 +1,5 @@
 #Get a new cache manager object!
+$ErrorActionPreference = "Stop";
 
 Function New-CacheManager {
 
@@ -68,16 +69,11 @@ Function New-CacheManager {
 					#If file isn't cached, it will be.
 					#If cache not enabled or file is local, then the same filename will be returned!
 					getFile = {
-						param($RemoteName)
+						param($RemoteName, $RecheckFrequency = $null)
 						
 						$Internal = $this.internal;
 						
 						if(!$this.enabled){
-							return $RemoteName;
-						}
-						
-						if(![IO.File]::Exists($RemoteName)){
-							$Internal.log("Remote $RemoteName dont exists.");
 							return $RemoteName;
 						}
 						
@@ -90,12 +86,18 @@ Function New-CacheManager {
 						
 						#Check if file map already in database...
 						if($FileMap.Contains($RemoteName)){
+							#Get the remote name slot!
 							$FileMapEntry 	= $FileMap[$RemoteName];
+							#Check last download time!
 							$LastDownloadTime = $FileMapEntry.LastDownloadTime
+
+							#Get the path to local file cache!
 							$FullLocalPath	= $Internal.getFileCachePath($FileMapEntry.FileName);
 							
+							#Logging...
 							$Internal.log("Remote $RemoteName cached: $($FullLocalPath) lastDownloadTime: $lastDownloadTime", "VERBOSE");
 
+							#If file not exists, attempts bring the file from the remote cache!
 							if(![Io.File]::Exists($FullLocalPath)){
 								try {
 									$Internal.log("CacheManager: The local path $FullLocalPath (original: $( $RemoteName)) was not found. Trying re-copy!", "DETAILED");
@@ -105,29 +107,50 @@ Function New-CacheManager {
 									$Internal.updateDatabase('FILE_MAP',$FileMap);
 								} catch {
 									$Internal.log("	Cannot recopy! Error: $_","DETAILED")
-									return $null;
+									return $RemoteName;
 								}
 							}
 							
-							try {
-								$RemoteFile = Get-Item $RemoteName;
-								
-								$Internal.log("Remote last modification time: $($RemoteFile.LastWriteTime)","VERBOSE")
-								
-								
-								if($RemoteFile.LastWriteTime -ge $FileMapEntry.LastDownloadTime){
-									$Internal.log("Updating local copy!","VERBOSE")
-									copy -Path $RemoteName -Destination $FullLocalPath -force;
-									$FileMapEntry.LastDownloadTime = (Get-Date);
-									$Internal.updateDatabase('FILE_MAP',$FileMap);
+							#Try update file!
+							#Will try update if file recheck time passed!
+							if($RecheckFrequency){
+								if(!$FileMapEntry["LastCheck"]){
+									$FileMapEntry["LastCheck"] = [datetime]"1900-01-01"
 								}
-							} catch {
-								$Internal.log("	Cannot make update check process on remote file $RemoteName. Error: $_","DETAILED")
+								$NextRecheck = $FileMapEntry.LastCheck.addSeconds($RecheckFrequency);
+							} else {
+								$NextRecheck = [datetime]"1900-01-01"
+							}
+							
+							if( (Get-Date) -ge $NextRecheck ){
+								try {
+									$FileMapEntry["LastCheck"] = (Get-Date);
+									$RemoteFile = Get-Item $RemoteName;
+									
+									$Internal.log("Remote last modification time: $($RemoteFile.LastWriteTime)","VERBOSE")
+									if($RemoteFile.LastWriteTime -ge $FileMapEntry.LastDownloadTime){
+										$Internal.log("Updating local copy!","VERBOSE")
+										copy -Path $RemoteName -Destination $FullLocalPath -force;
+										$FileMapEntry.LastDownloadTime = (Get-Date);
+									}
+									
+									$Internal.updateDatabase('FILE_MAP',$FileMap);
+								} catch {
+									$Internal.log("	Cannot make update check process on remote file $RemoteName. Error: $_","DETAILED")
+								}
+							} else {
+								$Internal.log("	Ignoring recheck due to rechecktime. Next:$NextRecheck","VERBOSE")
 							}
 						
 							$CacheFilePath = $FullLocalPath
 						} 
 						else {
+							#Check if remote file is acessblie
+							if(![IO.File]::Exists($RemoteName)){
+								$Internal.log("Remote $RemoteName dont exists.");
+								return $RemoteName;
+							}
+
 							#Generate a new file name!
 							$NewFileName = $Internal.getNewFileCacheName($RemoteName);
 							$FullLocalPath = $Internal.getFileCachePath($NewFileName);
@@ -137,7 +160,7 @@ Function New-CacheManager {
 							#Copy remote file to filename!
 							try {
 								copy -Path $RemoteName -Destination $FullLocalPath -force;
-								$FileMap.add($RemoteName,@{FileName=$NewFileName; LastDownloadTime=(Get-Date)});
+								$FileMap.add($RemoteName,@{FileName=$NewFileName; LastDownloadTime=(Get-Date);LastCheck=$null});
 								$Internal.updateDatabase('FILE_MAP',$FileMap);
 							} catch {
 								$Internal.log("	Cannot cache $RemoteName into $FileName. Error: $_","DETAILED")

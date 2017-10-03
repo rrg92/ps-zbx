@@ -36,6 +36,7 @@ Function New-LogObject {
 	#>
 }
 
+
 Function Invoke-Log {
 	[CmdLetBinding(SupportsShouldProcess=$True)]
 	param(
@@ -92,6 +93,9 @@ Function Invoke-Log {
 		,#Dont put a timestamp on message
 			[switch]$NoUseTimestamp = $false
 			
+		,#For debugging purposes!
+			$debugID = $null
+			
 		,#This is the log object! Use the New-LogObject to create one.
 			[Parameter(Mandatory=$true,ValueFromPipeline=$true)]
 			$LogObject
@@ -133,6 +137,7 @@ Function Invoke-Log {
 		identApplyThis	= $ApplyThis
 		identKeepFlow	= $KeepFlow
 		noUseTimestamp	= $NoUseTimestamp
+		debugID			= $debugID
 	};
 		
 	
@@ -166,6 +171,123 @@ Function Invoke-Log {
 	#>
 }
 
+
+
+Function New-InvokeLogProxy {
+	param(
+		#The name of new function!
+		[Parameter(Mandatory=$true)]
+		$Name 
+	
+		,#This is the log object! Use the New-LogObject to create one.
+			[Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+			$LogObject
+	)
+	
+	
+	#Generate a new function with identical prametes...
+	#Add this code to it...
+
+	$CurrentModule  = $MyInvocation.MyCommand.ModuleName
+	$InvokeLogMeta  = New-object System.Management.Automation.CommandMetaData ( (Get-Command Invoke-Log -Module $CurrentModule) )
+	$InvokeLogMeta.Parameters.LogObject.ParameterSets.__AllParameterSets.ValueFromPipeline = $false;	
+	$InvokeLogMeta.Parameters.LogObject.ParameterSets.__AllParameterSets.IsMandatory = $false;	
+	
+	$NewID = 'InvokeLogProxy_'+([Guid]::NewGuid().Guid);
+	Set-Variable -Name $NewID -Value $LogObject -Scope "Global" -Visibility "Public";
+	
+	$NewFunctionScript = [scriptblock]::create("
+		function $Name {
+			#Proxy function for Invoke-Log
+			#Created on $(Get-Date)
+		
+			 $([Management.Automation.ProxyCommand]::GetCmdletBindingAttribute($InvokeLogMeta))
+			 param(
+				 $([Management.Automation.ProxyCommand]::GetParamBlock($InvokeLogMeta))
+			 )
+			 
+			 `$LogObject = Get-Variable -Name $NewID -ValueOnly;
+			 `$Params = `$PSBoundParameters;
+			
+			  Invoke-Log @Params -LogObject `$LogObject;
+		}
+	")
+	
+	return $NewFunctionScript;
+	
+
+	<#
+		.SYNOPSIS 
+			Create a copy of this function with with a default log object.
+			
+		.DESCRIPTION
+			Creates a custom invoke-log function.
+			Users can specify a name and a log object.
+			The cmdlet will return a string with function defintion. Just executes in current scope. (this is necessary because the module resided in different session state.)
+			After this, user can user this name to invoke log. With this, the log object dont need be piped!
+			This simplify use of log functions!
+			
+			Note that if two users create the function in same scope, this can lead to errors!
+			
+			Thanks to https://github.com/thlorenz/settings/blob/master/WindowsPowerShell/Modules/PSCodeGen/New-ScriptCmdlet.ps1
+			
+			You must take caution where definiing your function name.
+			This function will be added to the current scope!
+			If another function defined same script, this can overwrite the function!
+			
+		.EXAMPLE
+			
+			$LogObject = New-LogObject
+			$LogObject.LogLevel = "DETAILED"
+			
+			#Calls the script
+			. ($Log | New-InvokeLogProxy -Name "Log");
+			
+			
+			#Now, just call Log how if was Invoke-Log...
+			Log "My Log already uses my log object without pipeping it!"
+			
+			
+		.NOTES
+		
+			KNOW ISSUES
+				
+			WHAT'S NEW
+	#>
+}
+
+
 Function Get-LogLevels {
 	return (GetLogLevels)
 }
+
+#Set the default log level of logged messages
+Function Set-DefaultLogLevel {
+	param(
+		#This is the log object! Use the New-LogObject to create one.
+		[Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+		$LogObject
+		
+		,#The default level value. Use Get-LogLevels to valid log levels list
+			$DefaultLevel = $null
+	)
+	
+	$LogObject.setDefaultLogLevel($DefaultLevel);
+}
+
+#Returns true if can log.
+Function Test-LogLevel {
+	param(
+		
+		#The desired log level to check if can
+		$LogLevel
+		
+		,#This is the log object! Use the New-LogObject to create one.
+		[Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+		$LogObject
+	)
+	
+	return $LogObject.canlog($LogLevel);
+}
+
+
